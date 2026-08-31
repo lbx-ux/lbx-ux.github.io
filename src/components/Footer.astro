@@ -1,0 +1,98 @@
+---
+import { SITE_TITLE, SITE_AUTHOR, SOCIAL_LINKS } from '@/consts';
+import Icon from '@/components/Icon.astro';
+const year = new Date().getFullYear();
+---
+<footer class="site-footer">
+  <div class="container footer-inner glass">
+    <div class="footer-brand">
+      <p class="footer-title">{SITE_TITLE}</p>
+      <p class="footer-desc">记录、思考、与技术同行。</p>
+    </div>
+
+    <ul class="footer-links" role="list">
+      {
+        SOCIAL_LINKS.map((link) => (
+          <li>
+            <a
+              href={link.url}
+              class="footer-link"
+              aria-label={link.label}
+              rel={link.url.startsWith('http') ? 'me noopener' : undefined}
+            >
+              <Icon name={link.icon} size={17} />
+              <span>{link.label}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+  <p class="footer-fine">
+    © {year} {SITE_AUTHOR} · 保留所有权利 · 由 <a href="https://astro.build" rel="noopener">Astro</a> 驱动
+  </p>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: var(--space-8);
+    padding-bottom: 40px;
+  }
+  .footer-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 26px 32px;
+  }
+  .footer-title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 700;
+  }
+  .footer-desc {
+    margin: 2px 0 0;
+    font-size: 0.875rem;
+    color: var(--fg-faint);
+  }
+  .footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    font-size: 0.875rem;
+    color: var(--fg-muted);
+    transition: color var(--tr-fast), border-color var(--tr-fast), transform var(--tr-fast);
+  }
+  .footer-link:hover {
+    color: var(--accent-strong);
+    border-color: rgba(129, 140, 248, 0.45);
+    transform: translateY(-2px);
+  }
+  .footer-fine {
+    margin: 22px 0 0;
+    text-align: center;
+    font-size: 0.8125rem;
+    color: var(--fg-faint);
+  }
+  .footer-fine a {
+    color: var(--fg-muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .footer-fine a:hover {
+    color: var(--accent-strong);
+  }
+</style>

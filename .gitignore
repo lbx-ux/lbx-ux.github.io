@@ -1,0 +1,15 @@
+# 依赖与构建产物
+node_modules/
+dist/
+.astro/
+
+# 本地环境与工具
+.claude/
+*.local
+
+# 发布后台本地配置（含本机 Obsidian 库路径，因人而异）
+scripts/admin/config.json
+
+# 系统杂项
+.DS_Store
+Thumbs.db

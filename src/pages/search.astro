@@ -1,0 +1,239 @@
+---
+import { getPublishedPosts } from '@/lib/content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+interface SearchDoc {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  date: string;
+  body: string;
+}
+
+const posts = await getPublishedPosts();
+const docs: SearchDoc[] = posts.map((p) => ({
+  id: p.id,
+  title: p.data.title,
+  description: p.data.description,
+  tags: p.data.tags,
+  date: p.data.pubDate.toISOString().slice(0, 10),
+  // 截断正文用于客户端轻量匹配（每篇 4KB 足够）
+  body: (p.body ?? '').slice(0, 4096),
+}));
+
+const searchIndex = JSON.stringify(docs);
+---
+<BaseLayout title="搜索" description="搜索全站文章。">
+  <div class="container search-page">
+    <header class="page-head reveal">
+      <p class="page-eyebrow">SEARCH</p>
+      <h1 class="page-title">搜索</h1>
+    </header>
+
+    <div class="search-box glass reveal">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.3-4.3"></path>
+      </svg>
+      <input
+        id="search-input"
+        type="search"
+        placeholder="输入关键词，如「SpringCloud」「二叉树」…"
+        autocomplete="off"
+        aria-label="搜索文章"
+      />
+      <kbd class="search-kbd" aria-hidden="true">ESC 清空</kbd>
+    </div>
+
+    <p class="search-hint" id="search-hint" role="status">输入即可实时搜索 {posts.length} 篇文章</p>
+    <ul class="search-results" id="search-results" role="list"></ul>
+  </div>
+
+  <template id="result-tpl">
+    <li>
+      <a class="result-card glass glass-lift" href="">
+        <div class="result-head">
+          <span class="result-title"></span>
+          <time class="result-date"></time>
+        </div>
+        <p class="result-desc"></p>
+        <div class="result-tags"></div>
+      </a>
+    </li>
+  </template>
+
+  <script define:vars={{ searchIndex }}>
+    // 轻量客户端搜索：标题(5) / 标签(3) / 描述(2) / 正文(1) 加权匹配
+    const docs = JSON.parse(searchIndex);
+    const input = document.getElementById('search-input');
+    const results = document.getElementById('search-results');
+    const hint = document.getElementById('search-hint');
+    const tpl = document.getElementById('result-tpl');
+
+    function score(doc, q) {
+      let s = 0;
+      const title = doc.title.toLowerCase();
+      const desc = doc.description.toLowerCase();
+      const tags = doc.tags.join(' ').toLowerCase();
+      const body = doc.body.toLowerCase();
+      if (title.includes(q)) s += 5 * (title.split(q).length - 1);
+      if (tags.includes(q)) s += 3;
+      if (desc.includes(q)) s += 2;
+      if (body.includes(q)) s += 1;
+      return s;
+    }
+
+    function esc(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function render(q) {
+      results.innerHTML = '';
+      if (!q.trim()) {
+        hint.textContent = `输入即可实时搜索 ${docs.length} 篇文章`;
+        return;
+      }
+      const ql = q.trim().toLowerCase();
+      const hits = docs
+        .map((d) => ({ d, s: score(d, ql) }))
+        .filter((x) => x.s > 0)
+        .sort((a, b) => b.s - a.s)
+        .slice(0, 12);
+
+      hint.textContent = hits.length
+        ? `找到 ${hits.length} 篇与「${q}」相关的文章`
+        : `没有找到与「${q}」相关的文章，换个关键词试试？`;
+
+      for (const { d } of hits) {
+        const node = tpl.content.cloneNode(true);
+        const a = node.querySelector('a');
+        a.href = `/posts/${d.id}/`;
+        node.querySelector('.result-title').innerHTML = esc(d.title);
+        node.querySelector('.result-date').textContent = d.date;
+        node.querySelector('.result-desc').textContent = d.description;
+        node.querySelector('.result-tags').innerHTML = d.tags
+          .map((t) => `<span class="pill">${esc(t)}</span>`)
+          .join('');
+        results.appendChild(node);
+      }
+    }
+
+    input.addEventListener('input', () => render(input.value));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        input.value = '';
+        render('');
+      }
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .search-page {
+    max-width: 760px;
+  }
+  .page-head {
+    margin-bottom: var(--space-5);
+  }
+  .page-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.32em;
+    color: var(--accent);
+    margin: 0 0 12px;
+  }
+  .page-title {
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    font-weight: 700;
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 18px;
+    border-radius: 18px;
+    color: var(--fg-faint);
+  }
+  .search-box:focus-within {
+    border-color: rgba(129, 140, 248, 0.5);
+  }
+  .search-box input {
+    flex: 1;
+    height: 52px;
+    background: none;
+    border: 0;
+    outline: none;
+    color: var(--fg);
+    font: inherit;
+  }
+  .search-box input::placeholder {
+    color: var(--fg-faint);
+  }
+  .search-kbd {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    color: var(--fg-faint);
+    white-space: nowrap;
+  }
+  @media (max-width: 639px) {
+    .search-kbd {
+      display: none;
+    }
+  }
+
+  .search-hint {
+    margin: 18px 2px;
+    font-size: 0.875rem;
+    color: var(--fg-faint);
+  }
+
+  .search-results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 14px;
+  }
+  .result-card {
+    display: grid;
+    gap: 10px;
+    padding: 20px 24px;
+    cursor: pointer;
+  }
+  .result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .result-title {
+    font-weight: 700;
+    font-size: 1.0625rem;
+  }
+  .result-date {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--fg-faint);
+  }
+  .result-desc {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--fg-muted);
+  }
+  .result-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .result-tags .pill {
+    padding: 2px 10px;
+    font-size: 0.6875rem;
+  }
+</style>

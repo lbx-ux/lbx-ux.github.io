@@ -1,0 +1,115 @@
+---
+import { formatDate } from '@/lib/content';
+import { formatReadingTime } from '@/lib/readingTime';
+import type { Post } from '@/lib/content';
+import Icon from '@/components/Icon.astro';
+
+interface Props {
+  post: Post;
+  /** 列表首位可用大卡样式 */
+  featured?: boolean;
+}
+const { post, featured = false } = Astro.props;
+
+const url = `/posts/${post.id}/`;
+---
+<article class:list={['post-card', 'glass', 'glass-lift', 'glass-sheen', 'reveal', { featured }]}>
+  <div class="card-body">
+    <div class="card-tags">
+      {post.data.tags.slice(0, 3).map((tag) => <span class="pill">{tag}</span>)}
+    </div>
+
+    <h2 class="card-title">
+      <a href={url} class="card-link">{post.data.title}</a>
+    </h2>
+
+    <p class="card-desc">{post.data.description}</p>
+
+    <div class="post-meta card-meta">
+      <span class="meta-item">
+        <Icon name="calendar" size={15} />
+        <time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+      </span>
+      <span class="meta-item">
+        <Icon name="clock" size={15} />
+        {formatReadingTime(post.readingMinutes)}
+      </span>
+    </div>
+  </div>
+</article>
+
+<style>
+  .post-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 100%;
+    cursor: pointer;
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 22px 26px 24px;
+    flex: 1;
+  }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .card-tags .pill {
+    padding: 3px 12px;
+    font-size: 0.75rem;
+    background: rgba(0, 0, 0, 0.25);
+  }
+  [data-theme='light'] .card-tags .pill {
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  .card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  .featured .card-title {
+    font-size: 1.55rem;
+  }
+  .card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .card-link:focus-visible {
+    outline: none;
+  }
+  .post-card:has(.card-link:focus-visible) {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+
+  .card-desc {
+    margin: 0;
+    color: var(--fg-muted);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-meta {
+    margin-top: auto;
+    padding-top: 6px;
+    font-size: 0.8125rem;
+  }
+  .meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+</style>

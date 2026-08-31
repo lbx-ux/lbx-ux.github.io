@@ -1,0 +1,167 @@
+---
+import { SOCIAL_LINKS } from '@/consts';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Icon from '@/components/Icon.astro';
+---
+<BaseLayout title="关于" description="关于 lbx：Java 后端开发者，热爱技术、乐于记录与分享。">
+  <div class="container about-page">
+    <header class="page-head reveal">
+      <p class="page-eyebrow">ABOUT ME</p>
+      <h1 class="page-title">你好，我是 <span class="grad-text">lbx</span></h1>
+      <p class="page-sub">Java 后端开发 / 技术笔记爱好者 / 长期学习者</p>
+    </header>
+
+    <div class="about-grid">
+      <section class="glass glass-sheen about-card reveal">
+        <h2 class="card-heading">关于这个博客</h2>
+        <p>
+          这里记录我在 Java 后端路上的学习笔记与实践思考——从基础到框架，从原理到踩坑。
+          写作是我梳理知识的方式——如果某篇文章恰好帮到了你，那便是它额外的幸运。
+        </p>
+      </section>
+
+      <section class="glass glass-sheen about-card reveal">
+        <h2 class="card-heading">我在做的事</h2>
+        <ul class="skill-list" role="list">
+          <li><strong>Java 基础与并发</strong> — 集合、JVM、多线程与并发编程，理解语言本质</li>
+          <li><strong>后端框架</strong> — Spring Boot / SpringCloud 微服务，MySQL、Redis 常用组件</li>
+          <li><strong>消息与中间件</strong> — RabbitMQ、Kafka，关注可靠性与最终一致性</li>
+          <li><strong>持续学习</strong> — 算法、系统设计，把学到的写出来才算学会</li>
+        </ul>
+      </section>
+
+      <section class="glass glass-sheen about-card reveal">
+        <h2 class="card-heading">联系我</h2>
+        <p>欢迎交流技术、分享想法，或只是打个招呼：</p>
+        <div class="contact-links">
+          {
+            SOCIAL_LINKS.map((link) => (
+              <a
+                class="contact-link glass-lift"
+                href={link.url}
+                rel={link.url.startsWith('http') ? 'me noopener' : undefined}
+              >
+                <Icon name={link.icon} size={16} />
+                {link.label}
+              </a>
+            ))
+          }
+        </div>
+      </section>
+
+      <section class="glass glass-sheen about-card reveal">
+        <h2 class="card-heading">小声明</h2>
+        <p>
+          文章内容仅代表个人理解，如有错漏欢迎指正。未经特别说明，本站文章均可转载，
+          请附上原文链接。
+        </p>
+      </section>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .about-page {
+    max-width: 880px;
+  }
+  .page-head {
+    margin-bottom: var(--space-6);
+  }
+  .page-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.32em;
+    color: var(--accent);
+    margin: 0 0 12px;
+  }
+  .page-title {
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    font-weight: 700;
+  }
+  .page-sub {
+    margin: 12px 0 0;
+    color: var(--fg-muted);
+  }
+
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .about-card {
+    padding: 28px 30px;
+  }
+  .about-card:first-child {
+    grid-column: 1 / -1;
+  }
+  .card-heading {
+    font-size: 1.15rem;
+    margin-bottom: 14px;
+  }
+  .about-card p {
+    margin: 0 0 12px;
+    color: var(--fg-muted);
+  }
+  .about-card p:last-child {
+    margin-bottom: 0;
+  }
+
+  .skill-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+  }
+  .skill-list li {
+    position: relative;
+    padding-left: 22px;
+    color: var(--fg-muted);
+  }
+  .skill-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(120deg, var(--aurora-3), var(--aurora-2));
+    box-shadow: 0 0 10px rgba(129, 140, 248, 0.6);
+  }
+  .skill-list strong {
+    color: var(--fg);
+    margin-right: 6px;
+  }
+
+  .contact-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .contact-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--fg-muted);
+    transition: color var(--tr-fast), border-color var(--tr-fast), transform var(--tr-med);
+  }
+  .contact-link:hover {
+    color: var(--accent-strong);
+    border-color: rgba(129, 140, 248, 0.45);
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 767px) {
+    .about-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

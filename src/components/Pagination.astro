@@ -1,0 +1,74 @@
+---
+import Icon from '@/components/Icon.astro';
+
+interface Props {
+  current: number;
+  total: number;
+  baseUrl: string; // 以 / 结尾，如 /tags/astro/
+}
+const { current, total, baseUrl } = Astro.props;
+
+const href = (page: number) => (page === 1 ? baseUrl : `${baseUrl}${page}/`);
+---
+{
+  total > 1 && (
+    <nav class="pagination reveal" aria-label="分页">
+      {current > 1 && (
+        <a class="page-btn" href={href(current - 1)} aria-label="上一页">
+          <Icon name="arrow-left" size={16} />
+        </a>
+      )}
+      {Array.from({ length: total }, (_, i) => i + 1).map((page) =>
+        page === current ? (
+          <span class="page-btn is-current" aria-current="page">
+            {page}
+          </span>
+        ) : (
+          <a class="page-btn" href={href(page)}>
+            {page}
+          </a>
+        ),
+      )}
+      {current < total && (
+        <a class="page-btn" href={href(current + 1)} aria-label="下一页">
+          <Icon name="arrow-right" size={16} />
+        </a>
+      )}
+    </nav>
+  )
+}
+
+<style>
+  .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: var(--space-6);
+  }
+  .page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 8px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--fg-muted);
+    transition: color var(--tr-fast), background var(--tr-fast), border-color var(--tr-fast);
+  }
+  .page-btn:hover {
+    color: var(--accent-strong);
+    border-color: rgba(129, 140, 248, 0.45);
+    background: rgba(129, 140, 248, 0.1);
+  }
+  .page-btn.is-current {
+    color: #fff;
+    background: linear-gradient(120deg, var(--aurora-1), var(--aurora-2));
+    border-color: transparent;
+  }
+</style>

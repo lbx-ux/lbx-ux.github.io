@@ -1,0 +1,222 @@
+---
+import { NAV_LINKS, SITE_TITLE } from '@/consts';
+import Icon from '@/components/Icon.astro';
+
+const currentPath = Astro.url.pathname;
+const isActive = (url: string) =>
+  url === '/' ? currentPath === '/' : currentPath.startsWith(url.replace(/\/$/, ''));
+---
+<header class="site-header glass glass-sheen" data-header data-liquid-glass>
+  <div class="container header-inner">
+    <a href="/" class="logo" aria-label={`${SITE_TITLE} 首页`}>
+      <span class="logo-mark" aria-hidden="true"></span>
+      <span class="logo-text">{SITE_TITLE}</span>
+    </a>
+
+    <nav class="main-nav" aria-label="主导航">
+      {
+        NAV_LINKS.map((link) => (
+          <a href={link.url} class:list={['nav-link', { 'is-active': isActive(link.url) }]}>
+            {link.label}
+          </a>
+        ))
+      }
+    </nav>
+
+    <div class="header-actions">
+      <button
+        type="button"
+        class="icon-btn"
+        data-theme-toggle
+        aria-label="切换明暗主题"
+      >
+        <span class="theme-icon-light"><Icon name="sun" /></span>
+        <span class="theme-icon-dark"><Icon name="moon" /></span>
+      </button>
+
+      <a href="/search/" class="icon-btn" aria-label="搜索文章">
+        <Icon name="search" />
+      </a>
+
+      <button
+        type="button"
+        class="icon-btn nav-toggle"
+        data-nav-toggle
+        aria-expanded="false"
+        aria-controls="mobile-nav"
+        aria-label="打开菜单"
+      >
+        <Icon name="menu" />
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- 移动端抽屉 -->
+<nav id="mobile-nav" class="mobile-nav glass" data-mobile-nav aria-label="移动端导航">
+  {
+    NAV_LINKS.map((link) => (
+      <a href={link.url} class:list={['mobile-link', { 'is-active': isActive(link.url) }]}>
+        {link.label}
+        <Icon name="arrow-right" size={16} />
+      </a>
+    ))
+  }
+</nav>
+
+<style>
+  .site-header {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    width: min(1080px, calc(100% - 32px));
+    border-radius: 22px;
+    transition: background var(--tr-med), border-color var(--tr-med), box-shadow var(--tr-med);
+  }
+  .site-header.is-scrolled {
+    background: color-mix(in srgb, var(--bg) 55%, transparent);
+    box-shadow: 0 12px 40px -12px rgba(0, 0, 0, 0.45);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    height: 60px;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.0625rem;
+    letter-spacing: -0.01em;
+  }
+  .logo-mark {
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    background: conic-gradient(from 210deg, var(--aurora-3), var(--aurora-1), var(--aurora-2), var(--aurora-3));
+    box-shadow: 0 0 14px rgba(129, 140, 248, 0.55);
+  }
+
+  .main-nav {
+    display: flex;
+    gap: 4px;
+  }
+  .nav-link {
+    position: relative;
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--fg-muted);
+    transition: color var(--tr-fast), background var(--tr-fast);
+  }
+  .nav-link:hover {
+    color: var(--fg);
+    background: var(--glass-bg-hover);
+  }
+  .nav-link.is-active {
+    color: var(--accent-strong);
+  }
+  .nav-link.is-active::after {
+    content: '';
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 2px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--aurora-3), var(--aurora-2));
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    color: var(--fg-muted);
+    transition: color var(--tr-fast), background var(--tr-fast);
+  }
+  .icon-btn:hover {
+    color: var(--fg);
+    background: var(--glass-bg-hover);
+  }
+
+  /* 主题图标：暗色显示太阳（点击切到浅色） */
+  .theme-icon-dark {
+    display: none;
+  }
+  [data-theme='light'] .theme-icon-light {
+    display: none;
+  }
+  [data-theme='light'] .theme-icon-dark {
+    display: inline-flex;
+  }
+
+  .nav-toggle {
+    display: none;
+  }
+
+  .mobile-nav {
+    position: fixed;
+    top: 96px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-12px);
+    z-index: 49;
+    width: min(1080px, calc(100% - 32px));
+    padding: 10px;
+    display: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--tr-med), transform var(--tr-med);
+  }
+  .mobile-nav.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+  }
+  .mobile-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px;
+    border-radius: 14px;
+    font-weight: 500;
+    color: var(--fg-muted);
+  }
+  .mobile-link:hover,
+  .mobile-link.is-active {
+    color: var(--accent-strong);
+    background: var(--glass-bg-hover);
+  }
+
+  :global(body.nav-open) {
+    overflow: hidden;
+  }
+
+  @media (max-width: 767px) {
+    .main-nav {
+      display: none;
+    }
+    .nav-toggle {
+      display: inline-flex;
+    }
+    .mobile-nav {
+      display: block;
+    }
+  }
+</style>

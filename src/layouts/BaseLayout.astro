@@ -1,0 +1,109 @@
+---
+import '@styles/global.css';
+import '@styles/prose.css';
+import { ClientRouter } from 'astro:transitions';
+import { SITE_TITLE, SITE_DESCRIPTION, SITE_AUTHOR, LOCALE, BASE_PATH } from '@/consts';
+import AuroraBackground from '@/components/AuroraBackground.astro';
+import Header from '@/components/Header.astro';
+import Footer from '@/components/Footer.astro';
+import BackToTop from '@/components/BackToTop.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  /** og:image 绝对路径（不含域名） */
+  ogImage?: string;
+  /** 文章页：JSON-LD 类型 */
+  jsonLd?: Record<string, unknown>;
+}
+const { title, description = SITE_DESCRIPTION, ogImage, jsonLd } = Astro.props;
+
+const site = Astro.site ?? new URL('https://example.com');
+const pageTitle = title === SITE_TITLE ? title : `${title} · ${SITE_TITLE}`;
+const canonical = new URL(Astro.url.pathname, site);
+const ogImageAbs = new URL(ogImage ?? 'og-default.png', site);
+const siteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  url: site.href,
+  author: { '@type': 'Person', name: SITE_AUTHOR },
+};
+---
+<!doctype html>
+<html lang={LOCALE} data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="author" content={SITE_AUTHOR} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="canonical" href={canonical.href} />
+    <link rel="icon" type="image/svg+xml" href={`${BASE_PATH}favicon.svg`} />
+    <link rel="sitemap" href={`${BASE_PATH}sitemap-index.xml`} />
+    <link rel="alternate" type="application/rss+xml" title={SITE_TITLE} href={`${BASE_PATH}rss.xml`} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content={jsonLd ? 'article' : 'website'} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:image" content={ogImageAbs.href} />
+    <meta property="og:locale" content={LOCALE} />
+    <meta property="og:site_name" content={SITE_TITLE} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageAbs.href} />
+
+    <!-- 主题防闪烁：在解析期间同步设置主题 -->
+    <script is:inline>
+      (() => {
+        const apply = () => {
+          const saved = localStorage.getItem('theme');
+          const theme =
+            saved === 'light' || saved === 'dark'
+              ? saved
+              : window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark';
+          document.documentElement.dataset.theme = theme;
+        };
+        apply();
+        // 视图过渡 swap 会用新文档的 data-theme（服务端默认 dark）覆盖当前值，
+        // 内联脚本内容相同不会重跑，因此在 after-swap 里重新应用一次
+        document.addEventListener('astro:after-swap', apply);
+      })();
+    </script>
+
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    {!jsonLd && <script type="application/ld+json" set:html={JSON.stringify(siteJsonLd)} />}
+
+    <ClientRouter />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到正文</a>
+    <AuroraBackground />
+    <Header />
+    <main id="main" class="site-main">
+      <slot />
+    </main>
+    <Footer />
+    <BackToTop />
+
+    <script>
+      import '@/scripts/site';
+    </script>
+  </body>
+</html>
+
+<style>
+  .site-main {
+    padding-top: calc(var(--header-h) + 40px);
+    min-height: calc(100dvh - 200px);
+  }
+</style>

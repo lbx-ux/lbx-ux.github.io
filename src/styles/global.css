@@ -1,0 +1,303 @@
+/* ═══════════════════════════════════════════════════════════════
+   Aurora Glass · 全局设计 token + 基础样式 + 玻璃工具类
+   暗色优先；浅色模式经 :root[data-theme='light'] 覆盖
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 字体 ── */
+@import '@fontsource-variable/outfit';
+@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource/noto-sans-sc/400.css';
+@import '@fontsource/noto-sans-sc/500.css';
+@import '@fontsource/noto-sans-sc/700.css';
+
+/* ── 设计 token ── */
+:root {
+  /* 画布 */
+  --bg: #07070d;
+  --bg-soft: #0c0c16;
+  --fg: #f4f4f8;
+  --fg-muted: #a2a2b5;
+  --fg-faint: #6d6d82;
+
+  /* 极光主色 */
+  --aurora-1: #6366f1; /* indigo  */
+  --aurora-2: #a855f7; /* purple  */
+  --aurora-3: #22d3ee; /* cyan    */
+  --accent: #818cf8;
+  --accent-strong: #a5b4fc;
+
+  /* 玻璃 */
+  --glass-bg: rgba(255, 255, 255, 0.055);
+  --glass-bg-hover: rgba(255, 255, 255, 0.09);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-border-strong: rgba(255, 255, 255, 0.22);
+  --glass-blur: 16px;
+
+  /* 结构 */
+  --card-radius: 20px;
+  --pill-radius: 999px;
+  --border: rgba(255, 255, 255, 0.08);
+  --ring: rgba(129, 140, 248, 0.7);
+
+  /* 排版 */
+  --font-heading: 'Outfit Variable', 'Noto Sans SC', system-ui, sans-serif;
+  --font-body: 'Noto Sans SC', 'Outfit Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Code', monospace;
+
+  /* 节奏 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --space-7: 64px;
+  --space-8: 96px;
+
+  --container: 1200px;
+  --header-h: 72px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --tr-fast: 160ms var(--ease-out);
+  --tr-med: 260ms var(--ease-out);
+}
+
+[data-theme='light'] {
+  --bg: #f3f4fa;
+  --bg-soft: #e9ebf5;
+  --fg: #16161f;
+  --fg-muted: #52525f;
+  --fg-faint: #85859a;
+  --accent: #4f46e5;
+  --accent-strong: #4338ca;
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-hover: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(22, 22, 31, 0.1);
+  --glass-border-strong: rgba(22, 22, 31, 0.18);
+  --border: rgba(22, 22, 31, 0.09);
+  --ring: rgba(79, 70, 229, 0.6);
+  --aurora-1: #6366f1;
+  --aurora-2: #a855f7;
+  --aurora-3: #22d3ee;
+}
+
+/* ── 基础 ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+[data-theme='light'] {
+  color-scheme: light;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+  min-height: 100dvh;
+}
+
+::selection {
+  background: rgba(129, 140, 248, 0.35);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ── 通用容器 ── */
+.container {
+  width: min(var(--container), 100% - clamp(32px, 8vw, 96px));
+  margin-inline: auto;
+}
+
+/* ── 玻璃工具类 ── */
+.glass {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+}
+
+.glass-soft {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  backdrop-filter: blur(10px) saturate(1.3);
+  border: 1px solid var(--glass-border);
+}
+
+/* 顶部亮边高光：模拟玻璃上缘受光 */
+.glass-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.glass-sheen::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  pointer-events: none;
+}
+
+/* 悬停时玻璃抬升 */
+.glass-lift {
+  transition:
+    transform var(--tr-med),
+    background var(--tr-med),
+    border-color var(--tr-med),
+    box-shadow var(--tr-med);
+}
+.glass-lift:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-strong);
+  transform: translateY(-4px);
+  box-shadow:
+    0 18px 48px -16px rgba(99, 102, 241, 0.25),
+    0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* ── 徽章 / 标签 pill ── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: var(--pill-radius);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--fg-muted);
+  transition: color var(--tr-fast), border-color var(--tr-fast), background var(--tr-fast);
+}
+a.pill:hover,
+button.pill:hover {
+  color: var(--accent-strong);
+  border-color: rgba(129, 140, 248, 0.45);
+  background: rgba(129, 140, 248, 0.1);
+}
+
+/* ── 渐变强调文字 ── */
+.grad-text {
+  background: linear-gradient(100deg, var(--aurora-3), var(--accent) 45%, var(--aurora-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* SplitText 拆字后 background-clip:text 需落在每个字符上才能透出字形；
+   渐变颜色经 CSS 变量继承，各字符独立裁剪仍呈连续渐变观感 */
+.split-char {
+  background: linear-gradient(100deg, var(--aurora-3), var(--accent) 45%, var(--aurora-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+/* 非渐变上下文里的字符恢复默认前景色：只有 .grad-text 后代才透明化 */
+.hero-title .split-char {
+  color: var(--fg);
+}
+.hero-title .grad-text .split-char,
+.grad-text .split-char {
+  color: transparent;
+}
+
+/* ── 入场 reveal：初始态只由 GSAP 设置，无 JS / reduced-motion 时可见 ── */
+
+/* ── 跳到正文链接（无障碍） ── */
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 100;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  transform: translateY(-64px);
+  transition: transform var(--tr-fast);
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* ── 滚动条 ── */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: rgba(22, 22, 31, 0.18);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

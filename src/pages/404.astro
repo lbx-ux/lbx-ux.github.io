@@ -1,0 +1,80 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+<BaseLayout title="404 · 页面未找到" description="你访问的页面不存在或已被移动。">
+  <div class="container notfound">
+    <div class="nf-card glass glass-sheen reveal">
+      <p class="nf-code grad-text">404</p>
+      <h1 class="nf-title">这个页面飘出了玻璃之外</h1>
+      <p class="nf-sub">它可能已被移动、删除，或者从未存在过。</p>
+      <div class="nf-actions">
+        <a class="btn-primary" href="/">回到首页</a>
+        <a class="btn-ghost" href="/archives/">浏览归档</a>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .notfound {
+    display: grid;
+    place-items: center;
+    min-height: 56vh;
+  }
+  .nf-card {
+    text-align: center;
+    padding: clamp(40px, 8vw, 80px) clamp(28px, 6vw, 72px);
+  }
+  .nf-code {
+    font-family: var(--font-heading);
+    font-size: clamp(4.5rem, 14vw, 8rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    margin: 0;
+  }
+  .nf-title {
+    font-size: 1.4rem;
+    margin-top: 18px;
+  }
+  .nf-sub {
+    color: var(--fg-muted);
+    margin: 10px 0 0;
+  }
+  .nf-actions {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 32px;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 28px;
+    border-radius: 14px;
+    background: linear-gradient(120deg, var(--aurora-1), var(--aurora-2));
+    color: #fff;
+    font-weight: 600;
+    transition: transform var(--tr-med), box-shadow var(--tr-med);
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 44px -8px rgba(99, 102, 241, 0.7);
+  }
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 28px;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    font-weight: 600;
+    color: var(--fg-muted);
+    transition: color var(--tr-fast), border-color var(--tr-fast), transform var(--tr-med);
+  }
+  .btn-ghost:hover {
+    color: var(--fg);
+    border-color: var(--glass-border-strong);
+    transform: translateY(-2px);
+  }
+</style>

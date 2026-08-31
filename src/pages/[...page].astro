@@ -1,0 +1,262 @@
+---
+import { getPublishedPosts, getTagMap } from '@/lib/content';
+import { estimateReadingTime } from '@/lib/readingTime';
+import PostCard from '@/components/PostCard.astro';
+import Pagination from '@/components/Pagination.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { SITE_TITLE, SITE_DESCRIPTION, POSTS_PER_PAGE } from '@/consts';
+
+export async function getStaticPaths({ paginate }: import('astro').APIContext) {
+  const posts = await getPublishedPosts();
+  return paginate(posts, { pageSize: POSTS_PER_PAGE });
+}
+
+const { page } = Astro.props;
+// paginate 序列化只保留原始 entry，阅读时长在渲染期重算
+const posts = page.data.map((p) => ({ ...p, readingMinutes: estimateReadingTime(p.body ?? '') }));
+const tagMap = getTagMap(posts);
+const featured = posts[0];
+const rest = posts.slice(1);
+const isFirstPage = page.currentPage === 1;
+---
+<BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
+  {isFirstPage && (
+    <section class="hero container" data-hero>
+      <p class="hero-eyebrow reveal" data-hero-eyebrow>PERSONAL BLOG</p>
+      <h1 class="hero-title" data-hero-title>
+        记录、思考、<br />与<em class="grad-text">技术</em>同行。
+      </h1>
+      <p class="hero-sub" data-hero-sub>
+        {SITE_DESCRIPTION}
+      </p>
+
+      <div class="hero-actions" data-hero-card>
+        <a class="btn-primary" href="#posts">开始阅读</a>
+        <a class="btn-ghost glass" href="/about/">关于我</a>
+      </div>
+
+      <div class="hero-stats glass glass-sheen" data-hero-card>
+        <div class="stat">
+          <span class="stat-num">{page.total}+</span>
+          <span class="stat-label">篇文章</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-num">{tagMap.size}</span>
+          <span class="stat-label">个标签</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-num">∞</span>
+          <span class="stat-label">好奇心</span>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="container posts-section" id="posts">
+    <div class="section-head reveal">
+      <h2 class="section-title">最新文章</h2>
+      <a class="see-all" href="/archives/">查看归档 →</a>
+    </div>
+
+    <div class="post-grid" data-stagger>
+      {
+        isFirstPage && featured && (
+          <div class="span-2">
+            <PostCard post={featured} featured />
+          </div>
+        )
+      }
+      {rest.map((post) => <PostCard post={post} />)}
+    </div>
+
+    {page.lastPage > 1 && <Pagination current={page.currentPage} total={page.lastPage} baseUrl="/" />}
+  </section>
+
+  {
+    isFirstPage && tagMap.size > 0 && (
+      <section class="container tags-section reveal">
+        <h2 class="section-title">标签云</h2>
+        <div class="tag-cloud">
+          {[...tagMap.entries()].map(([tag, count]) => (
+            <a class="pill" href={`/tags/${tag}/`}>
+              {tag}
+              <span class="tag-count">{count}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+    )
+  }
+</BaseLayout>
+
+<style>
+  /* ── Hero ── */
+  .hero {
+    padding: clamp(24px, 6vh, 72px) 0 clamp(40px, 8vh, 96px);
+    max-width: 860px;
+    margin-inline: auto;
+    text-align: center;
+  }
+  .hero-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.32em;
+    color: var(--accent);
+    margin: 0 0 20px;
+  }
+  .hero-title {
+    font-size: clamp(2.4rem, 6.5vw, 4.2rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    perspective: 600px;
+  }
+  .hero-title em {
+    font-style: normal;
+  }
+  .hero-sub {
+    margin: 24px auto 0;
+    max-width: 560px;
+    color: var(--fg-muted);
+    font-size: 1.0625rem;
+  }
+
+  .hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 36px;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    padding: 13px 30px;
+    border-radius: 16px;
+    background: linear-gradient(120deg, var(--aurora-1), var(--aurora-2));
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 10px 32px -8px rgba(99, 102, 241, 0.55);
+    transition: transform var(--tr-med), box-shadow var(--tr-med);
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 44px -8px rgba(99, 102, 241, 0.7);
+  }
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    padding: 13px 30px;
+    border-radius: 16px;
+    font-weight: 600;
+    color: var(--fg-muted);
+    transition: color var(--tr-fast), border-color var(--tr-fast), transform var(--tr-med);
+  }
+  .btn-ghost:hover {
+    color: var(--fg);
+    border-color: var(--glass-border-strong);
+    transform: translateY(-2px);
+  }
+
+  .hero-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(20px, 5vw, 48px);
+    margin: 56px auto 0;
+    padding: 22px 40px;
+    width: fit-content;
+  }
+  .stat {
+    display: grid;
+    justify-items: center;
+    gap: 2px;
+  }
+  .stat-num {
+    font-family: var(--font-heading);
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(120deg, var(--fg), var(--accent-strong));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .stat-label {
+    font-size: 0.8125rem;
+    color: var(--fg-faint);
+  }
+  .stat-divider {
+    width: 1px;
+    height: 34px;
+    background: var(--glass-border);
+  }
+
+  /* ── 文章区 ── */
+  .posts-section {
+    padding-top: var(--space-6);
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+  .see-all {
+    font-size: 0.9rem;
+    color: var(--fg-faint);
+    transition: color var(--tr-fast);
+  }
+  .see-all:hover {
+    color: var(--accent-strong);
+  }
+
+  .post-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px;
+  }
+  .span-2 {
+    grid-column: 1 / -1;
+  }
+
+  /* ── 标签云 ── */
+  .tags-section {
+    padding-top: var(--space-7);
+  }
+  .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  .tag-count {
+    display: inline-grid;
+    place-items: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(129, 140, 248, 0.18);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    color: var(--accent-strong);
+  }
+
+  @media (max-width: 767px) {
+    .post-grid {
+      grid-template-columns: 1fr;
+    }
+    .hero-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .hero-stats {
+      padding: 18px 24px;
+    }
+  }
+</style>
