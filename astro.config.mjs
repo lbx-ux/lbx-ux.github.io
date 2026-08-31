@@ -3,10 +3,11 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
 // ── GitHub Pages 部署配置 ────────────────────────────────────────────────
-// 1. 把下面的 site 换成你的 Pages 地址：https://<用户名>.github.io
-// 2. 把 base 换成仓库名：用户页仓库（<username>.github.io）保持 '/'，
-//    普通仓库（如 blog）填 '/blog'
-const SITE = 'https://YOUR_USERNAME.github.io';
+// 推荐用「用户主页仓库」：仓库名 = <用户名>.github.io，部署在根路径，
+// 站内 /covers/、/posts/ 等绝对路径链接零改动即可工作。
+// 若改用普通仓库名（如 blog），BASE 需改为 '/blog' 并同步 src/consts.ts 的 BASE_PATH，
+// 且已发布文章里 /covers/ 图片路径需一并处理（不推荐）。
+const SITE = 'https://lbx-ux.github.io';
 const BASE = '/';
 
 export default defineConfig({
