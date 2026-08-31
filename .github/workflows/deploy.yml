@@ -48,3 +48,6 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+        # 换成自定义域名后：取消注释 cname 并填你的域名，
+        # 同时把 astro.config.mjs 的 SITE 改为 https://<你的域名>
+        # cname: www.example.com
