@@ -3,6 +3,8 @@ title: 七. Lua
 description: Lua是一种轻量小巧的脚本语言，用标准C语言编写并以源代码形式开放，其设计目的是为了嵌入应用程序中，从而为应用程序提供灵活的扩展和定制功能。官网：https://www.lua.org/
 pubDate: 2026-08-23
 tags: [Redis]
+series: Redis
+order: 7
 source: Java后端/数据库/Redis/1.基础/6. Redis分布式锁.md
 ---
 

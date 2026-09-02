@@ -3,6 +3,8 @@ title: 五.StringRedisTemple
 description: 1.StringRedisTemple
 pubDate: 2026-08-23
 tags: [Redis]
+series: Redis
+order: 5
 source: Java后端/数据库/Redis/1.基础/4. RedisTemplate.md
 ---
 

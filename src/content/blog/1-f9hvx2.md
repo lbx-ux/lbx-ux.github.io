@@ -3,6 +3,8 @@ title: 一.认识复杂度和简单排序算法
 description: 左神算法第1讲笔记：认识复杂度和简单排序算法
 pubDate: 2026-08-30
 tags: [算法]
+series: 左神算法笔记
+order: 1
 source: 算法/1.复杂度和简单排序算法.md
 ---
 

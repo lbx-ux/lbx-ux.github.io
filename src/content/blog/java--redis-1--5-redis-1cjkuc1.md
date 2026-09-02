@@ -3,6 +3,8 @@ title: 六. Redis缓存
 description: 一.Redis缓存Redis作为缓存（Cache）是它在实际项目中最核心、最常见的应用场景。它的主要作用是挡在关系型数据库（如MySQL）前面，替数据库抵挡高并发的读请求。因为Redis是基于内存的，
 pubDate: 2026-08-23
 tags: [Redis]
+series: Redis
+order: 6
 source: Java后端/数据库/Redis/1.基础/5. Redis缓存.md
 ---
 

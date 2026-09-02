@@ -2,7 +2,9 @@
 title: 八.Redis持久化
 description: Redis持久化Redis作为一款基于内存的数据库，其最大的优势是极高的读写性能。但这也带来了一个致命问题：一旦服务器宕机或断电，内存中的数据就会全部丢失。为了解决这个问题，Redis提供了持久化机制
 pubDate: 2026-08-23
-tags: [Java, 后端, 笔记]
+tags: [Redis]
+series: Redis
+order: 8
 source: Java后端/数据库/Redis/2.高级/1. 持久化.md
 ---
 

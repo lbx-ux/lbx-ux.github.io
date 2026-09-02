@@ -2,7 +2,9 @@
 title: 十一.网络模型
 description: 1.用户空间和内核态空间
 pubDate: 2026-08-23
-tags: [Java, 后端, 笔记]
+tags: [Redis]
+series: Redis
+order: 11
 source: Java后端/数据库/Redis/2.高级/4. 网络模型.md
 ---
 

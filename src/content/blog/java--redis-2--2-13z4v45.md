@@ -3,6 +3,8 @@ title: 九. Redis主从架构
 description: 一.Redis主从架构Redis的主从复制（MasterSlave/MasterReplica）是Redis实现高可用架构的最基本方式。它的核心思想很简单：一台主节点负责写数据，一台或多台从节点负责读
 pubDate: 2026-08-23
 tags: [Redis]
+series: Redis
+order: 9
 source: Java后端/数据库/Redis/2.高级/2. 主从同步与哨兵.md
 ---
 

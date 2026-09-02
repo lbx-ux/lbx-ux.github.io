@@ -3,6 +3,8 @@ title: 五.二叉树
 description: 左神算法第5讲笔记：二叉树
 pubDate: 2026-08-30
 tags: [算法]
+series: 左神算法笔记
+order: 5
 source: 算法/5.二叉树.md
 ---
 

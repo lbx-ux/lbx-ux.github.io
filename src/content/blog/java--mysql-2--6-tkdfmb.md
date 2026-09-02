@@ -3,6 +3,8 @@ title: 十三.日志
 description: 维度Binlog（二进制日志）RedoLog（重做日志）UndoLog（回滚日志）所属层级Server层（所有存储引擎通用）InnoDB存储引擎层InnoDB存储引擎层日志类型逻辑日志（记录SQL语句
 pubDate: 2026-08-20
 tags: [MySQL]
+series: MySQL
+order: 13
 source: Java后端/数据库/Mysql/2. 进阶/6.日志.md
 ---
 

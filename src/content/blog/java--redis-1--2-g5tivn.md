@@ -3,6 +3,8 @@ title: 二. BitMap
 description: 一.BitMap1.BitMap介绍我们按月来统计用户签到信息，签到记录为1，未签到则记录为0.把每一个bit位对应当月的每一天，形成了映射关系。用0和1标示业务状态，这种思路就称为位图（BitMap
 pubDate: 2026-08-23
 tags: [Redis]
+series: Redis
+order: 2
 source: Java后端/数据库/Redis/1.基础/2. 特殊类型.md
 ---
 

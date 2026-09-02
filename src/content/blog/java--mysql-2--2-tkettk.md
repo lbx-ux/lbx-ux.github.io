@@ -3,6 +3,8 @@ title: 九.索引
 description: 一.介绍索引（index）是帮助MySQL高效获取数据的数据结构(有序)。在数据之外，数据库系统还维护着满足特定查找算法的数据结构，这些数据结构以某种方式引用（指向）数据，这样就可以在这些数据结构上实
 pubDate: 2026-08-20
 tags: [MySQL]
+series: MySQL
+order: 9
 source: Java后端/数据库/Mysql/2. 进阶/2.索引.md
 ---
 

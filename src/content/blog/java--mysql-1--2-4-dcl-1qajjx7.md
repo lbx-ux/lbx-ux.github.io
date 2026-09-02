@@ -3,6 +3,8 @@ title: 五.DCL
 description: DCLDCL英文全称是DataControlLanguage（数据控制语言），用来管理数据库用户控制数据库的访问权限。1.查询用户sqlusemysql;selectfromuser;!image20
 pubDate: 2026-08-20
 tags: [MySQL]
+series: MySQL
+order: 5
 source: Java后端/数据库/Mysql/1. 基础/2.4.DCL.md
 ---
 

@@ -3,6 +3,8 @@ title: 十一.事务
 description: MySQL中的事务是将一组SQL语句作为一个不可分割的逻辑单元执行，仅在InnoDB引擎中被完整支持。
 pubDate: 2026-08-20
 tags: [MySQL]
+series: MySQL
+order: 11
 source: Java后端/数据库/Mysql/2. 进阶/4.事务.md
 ---
 

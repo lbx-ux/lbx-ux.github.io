@@ -3,6 +3,8 @@ title: 四.DQL
 description: DQLDQL英文全称是DataQueryLanguage(数据查询语言),数据查询语言,用来查询数据库中表的记录。1.基本查询1.查询多个字段sqlselect字段1，字段2…………from表名;2.
 pubDate: 2026-08-20
 tags: [MySQL]
+series: MySQL
+order: 4
 source: Java后端/数据库/Mysql/1. 基础/2.3.DQL.md
 ---
 

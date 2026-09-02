@@ -3,6 +3,8 @@ title: 十二.锁
 description: 一.全局锁全局锁（GlobalLock）是对整个MySQL数据库实例加锁，使整个数据库处于只读状态。加锁后，所有数据更新语句（DML：增删改）、数据定义语句（DDL：建表、改字段等）以及更新类事务的提
 pubDate: 2026-08-20
 tags: [MySQL]
+series: MySQL
+order: 12
 source: Java后端/数据库/Mysql/2. 进阶/5.锁.md
 ---
 

@@ -3,6 +3,8 @@ title: 十.Redis分片集群
 description: Redis分片集群Redis分片集群（RedisCluster）是Redis官方提供的一种分布式解决方案。它的核心思想是将数据自动拆分（Sharding）到多个不同的Redis节点上，从而突破单台物理
 pubDate: 2026-08-23
 tags: [Redis]
+series: Redis
+order: 10
 source: Java后端/数据库/Redis/2.高级/3. 分片集群.md
 ---
 

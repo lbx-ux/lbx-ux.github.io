@@ -3,6 +3,8 @@ title: 三. SDS
 description: 在Redis7.0及之后版本中，最核心的底层变革是彻底废除了ziplist（压缩列表），全面由listpack（紧凑列表）替代，以彻底解决连锁更新（CascadingUpdates）问题。类型Redi
 pubDate: 2026-08-23
 tags: [Redis]
+series: Redis
+order: 3
 source: Java后端/数据库/Redis/1.基础/3. 底层数据结构.md
 ---
 

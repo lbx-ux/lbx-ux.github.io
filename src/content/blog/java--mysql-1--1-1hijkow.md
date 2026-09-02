@@ -3,6 +3,8 @@ title: 一.  数据库相关概念
 description: 一.数据库相关概念数据库、数据库管理系统、SQL名称全称::::数据库存储数据的仓库，数据是有组织的进行存储数据库管理系统操作和管理数据库的大型软件SQL操作关系型数据库的编程语言，定义了一套操作关系
 pubDate: 2026-08-20
 tags: [MySQL]
+series: MySQL
+order: 1
 source: Java后端/数据库/Mysql/1. 基础/1.基础.md
 ---
 

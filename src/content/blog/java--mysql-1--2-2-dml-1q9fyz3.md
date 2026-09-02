@@ -3,6 +3,8 @@ title: 三.DML
 description: DMLDML英文全称是DataManipulationLanguage(数据操作语言),用来对数据库中表的数据记录进行增、删、改操作。1.添加数据(insert)1.给指定的字段添加数据sqlinse
 pubDate: 2026-08-20
 tags: [MySQL]
+series: MySQL
+order: 3
 source: Java后端/数据库/Mysql/1. 基础/2.2.DML.md
 ---
 

@@ -3,6 +3,8 @@ title: 一. Spring Data Redis
 description: 一.SpringDataRedis
 pubDate: 2026-08-23
 tags: [Redis]
+series: Redis
+order: 1
 source: Java后端/数据库/Redis/1.基础/1. Redis.md
 ---
 

@@ -3,6 +3,8 @@ title: 十. SQL性能分析
 description: 在MySQL中，分析SQL的执行频率（即各类语句的调用次数与占比）是进行容量规划、架构设计（如读写分离、缓存设计）以及定位系统瓶颈的重要手段。
 pubDate: 2026-08-20
 tags: [MySQL]
+series: MySQL
+order: 10
 source: Java后端/数据库/Mysql/2. 进阶/3.SQL优化.md
 ---
 
