@@ -151,8 +151,9 @@
     // 预填表单
     $('#f-title').value = note.title || '';
     $('#f-desc').value = '';
-    $('#f-tags').value = '';
     $('#f-date').value = fmtDate(note.mtime);
+    $('#f-series').value = '';
+    $('#f-order').value = '';
     $('#f-draft').checked = false;
 
     previewDialog.showModal();
@@ -184,7 +185,8 @@
           rel: currentRel,
           title: $('#f-title').value.trim() || undefined,
           description: $('#f-desc').value.trim() || undefined,
-          tags: $('#f-tags').value.trim() || undefined,
+          series: $('#f-series').value.trim() || undefined,
+          order: $('#f-order').value.trim() || undefined,
           pubDate: $('#f-date').value || undefined,
           draft: $('#f-draft').checked,
         }),
@@ -220,7 +222,7 @@
             </div>
             <div class="item-sub">${esc(p.description || '')}</div>
             <div class="item-sub">
-              ${p.tags.map((t) => `<span class="tag">${esc(t)}</span>`).join('')}
+              ${p.series ? `<span class="tag series-tag">${esc(p.series)}${p.order != null ? ` · ${esc(String(p.order))}` : ''}</span>` : ''}
               <span style="margin-left:4px">${esc(p.pubDate)}</span>
             </div>
           </div>
@@ -289,8 +291,9 @@
 
     $('#f-title').value = post.title;
     $('#f-desc').value = post.description;
-    $('#f-tags').value = post.tags.join(', ');
     $('#f-date').value = post.pubDate;
+    $('#f-series').value = post.series || '';
+    $('#f-order').value = post.order != null ? String(post.order) : '';
     $('#f-draft').checked = post.draft;
     $('#preview-content').textContent = '（编辑模式下不显示正文。正文如需修改，请直接编辑 src/content/blog/ 下的 .md 文件。）';
 
@@ -304,7 +307,8 @@
           body: JSON.stringify({
             title: $('#f-title').value.trim(),
             description: $('#f-desc').value.trim(),
-            tags: $('#f-tags').value.trim(),
+            series: $('#f-series').value.trim(),
+            order: $('#f-order').value.trim(),
             pubDate: $('#f-date').value,
             draft: $('#f-draft').checked,
           }),
@@ -357,6 +361,35 @@
   document.querySelectorAll('dialog [data-close]').forEach((btn) =>
     btn.addEventListener('click', () => btn.closest('dialog').close()),
   );
+
+  /* ── 发布即上线 ── */
+  $('#btn-deploy').addEventListener('click', async () => {
+    const btn = $('#btn-deploy');
+    try {
+      const { hasRemote, changes } = await api('/api/deploy/status');
+      if (!changes.length) {
+        toast('没有需要推送的变更', 'ok');
+        return;
+      }
+      const msg = hasRemote
+        ? `将提交并推送 ${changes.length} 个内容文件到 GitHub，\nGitHub Actions 会自动构建部署（约 2 分钟）。继续？`
+        : `有 ${changes.length} 个内容文件待提交，但尚未配置远程仓库。\n将先本地提交，配置 remote 后再推送。继续？`;
+      if (!confirm(msg)) return;
+
+      btn.disabled = true;
+      const oldText = btn.innerHTML;
+      btn.textContent = '推送中…';
+      const result = await api('/api/deploy', { method: 'POST' });
+      toast(result.message, 'ok');
+      if (result.committed) loadPosts();
+    } catch (e) {
+      toast(e.message, 'err');
+    } finally {
+      btn.disabled = false;
+      // 恢复按钮（innerHTML 含 svg，需重建）
+      btn.innerHTML = oldText;
+    }
+  });
 
   /* ── 启动 ── */
   loadNotes();

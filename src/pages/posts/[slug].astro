@@ -1,7 +1,8 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { render } from 'astro:content';
 import { getPublishedPosts, getRelatedPosts, getAdjacentPosts, formatDate } from '@/lib/content';
 import { estimateReadingTime, formatReadingTime } from '@/lib/readingTime';
+import { getPostSeries } from '@/lib/series';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Icon from '@/components/Icon.astro';
 import { SITE_TITLE, SITE_AUTHOR } from '@/consts';
@@ -24,6 +25,9 @@ const allPosts = (await getPublishedPosts()).map((p) => ({
 }));
 const { newer, older } = getAdjacentPosts(post, allPosts);
 const related = getRelatedPosts(post, allPosts);
+const { series, index } = getPostSeries(post, allPosts);
+const seriesPrev = series && index > 0 ? series.posts[index - 1] : null;
+const seriesNext = series && index >= 0 && index < series.posts.length - 1 ? series.posts[index + 1] : null;
 
 // 从渲染后的标题集合生成 TOC（直接扫 Markdown 源更简单可靠）
 interface TocItem {
@@ -54,7 +58,7 @@ while ((match = headingRegex.exec(body)) !== null) {
   toc.push({ depth, slug, text });
 }
 
-const ogImage = post.data.cover ?? 'og-default.png';
+const ogImage = 'og-default.png';
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'BlogPosting',
@@ -62,7 +66,6 @@ const jsonLd = {
   description: post.data.description,
   datePublished: post.data.pubDate.toISOString(),
   author: { '@type': 'Person', name: SITE_TITLE },
-  keywords: post.data.tags.join(', '),
   mainEntityOfPage: new URL(`/posts/${post.id}/`, Astro.site).href,
 };
 ---
@@ -72,9 +75,6 @@ const jsonLd = {
   <div class="container post-shell">
     <!-- ── 文章头 ── -->
     <header class="post-header reveal">
-      <div class="post-tags">
-        {post.data.tags.map((tag) => <a class="pill" href={`/tags/${tag}/`}>{tag}</a>)}
-      </div>
       <h1 class="post-title">{post.data.title}</h1>
       <div class="post-meta">
         <span class="meta-item">
@@ -91,6 +91,48 @@ const jsonLd = {
         </span>
       </div>
     </header>
+
+    <!-- ── 专栏横幅 ── -->
+    {
+      series && (
+        <nav class="series-banner glass glass-sheen reveal" aria-label={`专栏：${series.name}`}>
+          <div class="sb-row">
+            <a class="sb-name" href={`/series/${series.slug}/`}>
+              <Icon name="layers" size={16} />
+              {series.name}
+            </a>
+            <span class="sb-progress">
+              第 {post.data.order ?? index + 1} / {series.posts.length} 篇
+            </span>
+          </div>
+          <div class="sb-dots" aria-hidden="true">
+            {series.posts.map((p, i) => (
+              <a
+                class:list={['sb-dot', { 'is-done': i < index, 'is-current': i === index }]}
+                href={`/posts/${p.id}/`}
+                title={p.data.title}
+              />
+            ))}
+          </div>
+          {(seriesPrev || seriesNext) && (
+            <div class="sb-nav">
+              {seriesPrev ? (
+                <a class="sb-link" href={`/posts/${seriesPrev.id}/`}>
+                  <Icon name="arrow-left" size={14} /> 上一篇：{seriesPrev.data.title}
+                </a>
+              ) : (
+                <span />
+              )}
+              {seriesNext && (
+                <a class="sb-link sb-next" href={`/posts/${seriesNext.id}/`}>
+                  下一篇：{seriesNext.data.title} <Icon name="arrow-right" size={14} />
+                </a>
+              )}
+            </div>
+          )}
+        </nav>
+      )
+    }
 
     <!-- ── 正文 + TOC 双栏 ── -->
     <div class="post-columns">
@@ -152,7 +194,7 @@ const jsonLd = {
           <div class="related-grid" data-stagger>
             {related.map((p) => (
               <a class="rel-card glass glass-lift" href={`/posts/${p.id}/`}>
-                <span class="rel-tag">{p.data.tags[0] ?? '文章'}</span>
+                <span class="rel-tag">{p.data.series ?? '文章'}</span>
                 <span class="rel-title">{p.data.title}</span>
                 <time class="rel-date" datetime={p.data.pubDate.toISOString()}>
                   {formatDate(p.data.pubDate)}
@@ -194,13 +236,6 @@ const jsonLd = {
     margin-inline: auto;
     text-align: center;
   }
-  .post-tags {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 18px;
-  }
   .post-title {
     font-size: clamp(1.8rem, 4.5vw, 2.8rem);
     font-weight: 700;
@@ -215,6 +250,85 @@ const jsonLd = {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+  }
+
+  /* ── 专栏横幅 ── */
+  .series-banner {
+    max-width: 820px;
+    margin: var(--space-6) auto 0;
+    padding: 18px 24px;
+    display: grid;
+    gap: 12px;
+  }
+  .sb-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .sb-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--accent-strong);
+  }
+  .sb-name:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .sb-progress {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--fg-faint);
+  }
+  .sb-dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .sb-dot {
+    width: 22px;
+    height: 6px;
+    border-radius: 4px;
+    background: var(--glass-border);
+    transition: background var(--tr-fast), transform var(--tr-fast);
+  }
+  .sb-dot:hover {
+    transform: scaleY(1.6);
+  }
+  .sb-dot.is-done {
+    background: linear-gradient(90deg, var(--aurora-3), var(--aurora-1));
+    opacity: 0.65;
+  }
+  .sb-dot.is-current {
+    background: linear-gradient(90deg, var(--aurora-1), var(--aurora-2));
+    box-shadow: 0 0 10px rgba(129, 140, 248, 0.55);
+  }
+  .sb-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .sb-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    font-size: 0.8125rem;
+    color: var(--fg-muted);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 48%;
+  }
+  .sb-link:hover {
+    color: var(--accent-strong);
+  }
+  .sb-next {
+    justify-content: flex-end;
   }
 
   /* ── 双栏 ── */

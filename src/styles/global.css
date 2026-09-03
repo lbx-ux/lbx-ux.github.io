@@ -207,27 +207,6 @@ button {
     0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
-/* ── 徽章 / 标签 pill ── */
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 14px;
-  border-radius: var(--pill-radius);
-  border: 1px solid var(--glass-border);
-  background: var(--glass-bg);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--fg-muted);
-  transition: color var(--tr-fast), border-color var(--tr-fast), background var(--tr-fast);
-}
-a.pill:hover,
-button.pill:hover {
-  color: var(--accent-strong);
-  border-color: rgba(129, 140, 248, 0.45);
-  background: rgba(129, 140, 248, 0.1);
-}
-
 /* ── 渐变强调文字 ── */
 .grad-text {
   background: linear-gradient(100deg, var(--aurora-3), var(--accent) 45%, var(--aurora-2));

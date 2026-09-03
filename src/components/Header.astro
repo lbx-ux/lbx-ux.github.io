@@ -34,9 +34,10 @@ const isActive = (url: string) =>
         <span class="theme-icon-dark"><Icon name="moon" /></span>
       </button>
 
-      <a href="/search/" class="icon-btn" aria-label="搜索文章">
+      <button type="button" class="icon-btn search-btn" data-search-open aria-label="搜索文章（Ctrl+K）" title="搜索（Ctrl+K）">
         <Icon name="search" />
-      </a>
+        <kbd class="search-kbd" aria-hidden="true">Ctrl K</kbd>
+      </button>
 
       <button
         type="button"
@@ -156,6 +157,22 @@ const isActive = (url: string) =>
     background: var(--glass-bg-hover);
   }
 
+  /* 搜索按钮：图标 + Ctrl K 快捷键提示（任意页面可用） */
+  .search-btn {
+    width: auto;
+    padding: 0 10px;
+    gap: 7px;
+  }
+  .search-kbd {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1.5;
+    padding: 1px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    color: var(--fg-faint);
+  }
+
   /* 主题图标：暗色显示太阳（点击切到浅色） */
   .theme-icon-dark {
     display: none;
@@ -217,6 +234,9 @@ const isActive = (url: string) =>
     }
     .mobile-nav {
       display: block;
+    }
+    .search-kbd {
+      display: none;
     }
   }
 </style>

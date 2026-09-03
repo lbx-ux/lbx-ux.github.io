@@ -1,0 +1,384 @@
+---
+/**
+ * Ctrl+K 全局搜索面板（引入于 BaseLayout，全站可用）。
+ * 逻辑在模块脚本里：document 级委托监听只绑一次，视图过渡后依然有效。
+ */
+---
+<div id="search-palette" class="sp-overlay" hidden>
+  <div class="sp-backdrop" data-sp-close></div>
+  <div class="sp-panel glass" role="dialog" aria-modal="true" aria-label="搜索文章">
+    <div class="sp-input-row">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.3-4.3"></path>
+      </svg>
+      <input
+        id="sp-input"
+        type="search"
+        placeholder="搜索文章…"
+        autocomplete="off"
+        aria-label="搜索文章"
+        role="combobox"
+        aria-expanded="false"
+        aria-controls="sp-results"
+      />
+      <kbd class="sp-kbd" aria-hidden="true">ESC</kbd>
+    </div>
+    <ul class="sp-results" id="sp-results" role="listbox" aria-label="搜索结果"></ul>
+    <div class="sp-foot">
+      <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span>
+      <span><kbd>Enter</kbd> 打开</span>
+      <span><kbd>Esc</kbd> 关闭</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { fetchDocs, searchDocs, type SearchDoc } from '@/lib/searchClient';
+
+  let docsPromise: Promise<SearchDoc[]> | null = null;
+  let activeIndex = -1;
+
+  const getPalette = () => document.getElementById('search-palette');
+  const getInput = () => document.getElementById('sp-input') as HTMLInputElement | null;
+  const getList = () => document.getElementById('sp-results') as HTMLUListElement | null;
+
+  const esc = (s: string) => {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  };
+
+  function ensureDocs() {
+    docsPromise ??= fetchDocs();
+    return docsPromise;
+  }
+
+  function setOpen(open: boolean) {
+    const palette = getPalette();
+    const input = getInput();
+    if (!palette || !input) return;
+    if (open) {
+      palette.hidden = false;
+      document.body.classList.add('sp-open');
+      input.value = '';
+      render('');
+      requestAnimationFrame(() => input.focus());
+      ensureDocs().catch(() => {}); // 打开时预取
+    } else {
+      palette.hidden = true;
+      document.body.classList.remove('sp-open');
+      activeIndex = -1;
+    }
+  }
+
+  function render(q: string) {
+    const list = getList();
+    if (!list) return;
+    activeIndex = -1;
+    if (!q.trim()) {
+      list.innerHTML = '<li class="sp-empty" role="option" aria-disabled="true">输入关键词开始搜索</li>';
+      syncAria();
+      return;
+    }
+    ensureDocs()
+      .then((docs) => {
+        // 面板可能已被关闭或换页
+        if (!getPalette() || getPalette()!.hidden) return;
+        const hits = searchDocs(docs, q);
+        if (!hits.length) {
+          list.innerHTML = `<li class="sp-empty" role="option" aria-disabled="true">没有找到与「${esc(q)}」相关的文章</li>`;
+          syncAria();
+          return;
+        }
+        list.innerHTML = hits
+          .map(
+            (d, i) => `
+          <li class="sp-item" role="option" id="sp-opt-${i}" aria-selected="false" data-href="/posts/${d.id}/">
+            <div class="sp-item-head">
+              <span class="sp-title">${esc(d.title)}</span>
+              <time class="sp-date">${d.date}</time>
+            </div>
+            <p class="sp-desc">${esc(d.description)}</p>
+            ${d.series ? `<div class="sp-meta"><span class="sp-series">${esc(d.series)}</span></div>` : ''}
+          </li>`,
+          )
+          .join('');
+        syncAria();
+      })
+      .catch(() => {
+        const l = getList();
+        if (l) l.innerHTML = '<li class="sp-empty" role="option" aria-disabled="true">索引加载失败，请重试</li>';
+      });
+  }
+
+  function currentItems(): HTMLElement[] {
+    const list = getList();
+    return list ? [...list.querySelectorAll<HTMLElement>('.sp-item')] : [];
+  }
+
+  function syncAria() {
+    const input = getInput();
+    const items = currentItems();
+    if (input) {
+      input.setAttribute('aria-activedescendant', activeIndex >= 0 ? `sp-opt-${activeIndex}` : '');
+      input.setAttribute('aria-expanded', String(items.length > 0));
+    }
+    items.forEach((el, i) => el.setAttribute('aria-selected', String(i === activeIndex)));
+  }
+
+  function highlight(idx: number) {
+    const items = currentItems();
+    if (!items.length) return;
+    activeIndex = (idx + items.length) % items.length;
+    items.forEach((el, i) => el.classList.toggle('is-active', i === activeIndex));
+    items[activeIndex].scrollIntoView({ block: 'nearest' });
+    syncAria();
+  }
+
+  function go(item: HTMLElement) {
+    const href = item.dataset.href;
+    if (!href) return;
+    setOpen(false);
+    window.location.href = href;
+  }
+
+  // ── document 级委托：只绑一次，视图过渡后无需重绑 ──
+  document.addEventListener(
+    'keydown',
+    (e) => {
+      const palette = getPalette();
+      if (!palette) return;
+      const isOpen = !palette.hidden;
+
+      // Ctrl/Cmd + K 开关（输入框聚焦时也拦截）
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setOpen(!isOpen);
+        return;
+      }
+      if (!isOpen) return;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setOpen(false);
+      } else if (e.key === 'Tab') {
+        // 焦点陷阱：面板内唯一可聚焦元素是输入框，Tab 留在面板内
+        e.preventDefault();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        highlight(activeIndex + 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        highlight(activeIndex - 1);
+      } else if (e.key === 'Enter') {
+        const items = currentItems();
+        if (activeIndex >= 0 && items[activeIndex]) {
+          e.preventDefault();
+          go(items[activeIndex]);
+        } else if (items.length === 1) {
+          e.preventDefault();
+          go(items[0]);
+        }
+      }
+    },
+    true,
+  );
+
+  // 任意 [data-search-open] 触发点（头部搜索按钮、404、首页等）→ 打开面板（document 委托，全站生效）
+  document.addEventListener('click', (e) => {
+    const trigger = (e.target as HTMLElement).closest<HTMLElement>('[data-search-open]');
+    if (!trigger) return;
+    e.preventDefault();
+    setOpen(true);
+  });
+
+  // 面板内交互（事件委托，面板 DOM 可能随换页重建，故绑 document）
+  document.addEventListener('click', (e) => {
+    const palette = getPalette();
+    if (!palette || palette.hidden) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-sp-close]')) {
+      setOpen(false);
+      return;
+    }
+    const item = target.closest<HTMLElement>('.sp-item');
+    if (item) go(item);
+  });
+  document.addEventListener('input', (e) => {
+    const palette = getPalette();
+    if (!palette || palette.hidden) return;
+    if ((e.target as HTMLElement).id === 'sp-input') {
+      render((e.target as HTMLInputElement).value);
+    }
+  });
+  // 鼠标悬停即高亮
+  document.addEventListener('mouseover', (e) => {
+    const palette = getPalette();
+    if (!palette || palette.hidden) return;
+    const item = (e.target as HTMLElement).closest<HTMLElement>('.sp-item');
+    if (item) {
+      const items = currentItems();
+      highlight(items.indexOf(item));
+    }
+  });
+</script>
+
+<style>
+  .sp-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+  }
+  .sp-overlay[hidden] {
+    display: none;
+  }
+  .sp-backdrop {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+  .sp-panel {
+    position: relative;
+    width: min(640px, calc(100vw - 32px));
+    margin: 15vh auto 0;
+    display: flex;
+    flex-direction: column;
+    max-height: min(520px, 70vh);
+    border-radius: 20px;
+    border-color: var(--glass-border-strong);
+    box-shadow: 0 32px 90px -20px rgba(0, 0, 0, 0.65);
+    overflow: hidden;
+  }
+
+  .sp-input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    color: var(--fg-faint);
+  }
+  #sp-input {
+    flex: 1;
+    background: none;
+    border: 0;
+    outline: none;
+    color: var(--fg);
+    font: inherit;
+    font-size: 1.0625rem;
+  }
+  #sp-input::placeholder {
+    color: var(--fg-faint);
+  }
+  .sp-kbd {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    color: var(--fg-faint);
+  }
+
+  .sp-results {
+    list-style: none;
+    margin: 0;
+    padding: 8px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .sp-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--fg-faint);
+    font-size: 0.875rem;
+  }
+  .sp-item {
+    padding: 12px 14px;
+    border-radius: 14px;
+    cursor: pointer;
+    display: grid;
+    gap: 6px;
+  }
+  .sp-item.is-active,
+  .sp-item:hover {
+    background: var(--glass-bg-hover);
+  }
+  .sp-item.is-active {
+    outline: 1px solid rgba(129, 140, 248, 0.4);
+  }
+  .sp-item-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .sp-title {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .sp-date {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--fg-faint);
+    flex-shrink: 0;
+  }
+  .sp-desc {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--fg-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .sp-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .sp-series {
+    padding: 1px 9px;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    background: rgba(129, 140, 248, 0.16);
+    color: var(--accent-strong);
+  }
+
+  .sp-foot {
+    display: flex;
+    gap: 16px;
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 0.7rem;
+    color: var(--fg-faint);
+  }
+  .sp-foot kbd {
+    font-family: var(--font-mono);
+    padding: 1px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    margin-right: 4px;
+  }
+  :global(body.sp-open) {
+    overflow: hidden;
+  }
+
+  @media (max-width: 639px) {
+    .sp-panel {
+      margin-top: 0;
+      width: 100vw;
+      max-width: 100vw;
+      border-radius: 0;
+      max-height: 85vh;
+    }
+    .sp-foot {
+      display: none;
+    }
+  }
+</style>

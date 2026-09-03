@@ -10,20 +10,17 @@ export const LOCALE = 'zh-CN';
 /** GitHub Pages base path（与 astro.config.mjs 的 base 保持一致） */
 export const BASE_PATH = '/';
 
-/** 每页文章数（首页 & 标签页分页） */
+/** 每页文章数（首页分页） */
 export const POSTS_PER_PAGE = 8;
 
 export const SOCIAL_LINKS = [
   { label: 'GitHub', url: 'https://github.com/lbx-ux', icon: 'github' },
-  { label: 'Email', url: 'mailto:hello@example.com', icon: 'mail' },
-  { label: 'X / Twitter', url: 'https://x.com/YOUR_USERNAME', icon: 'x' },
   { label: 'RSS', url: '/rss.xml', icon: 'rss' },
+  // 想加 Email / X 等更多链接时，在此按 { label, url, icon } 追加即可（icon 取自 src/components/Icon.astro）
 ] as const;
 
 export const NAV_LINKS = [
   { label: '首页', url: '/' },
-  { label: '归档', url: '/archives/' },
-  { label: '标签', url: '/tags/' },
-  { label: '搜索', url: '/search/' },
+  { label: '专栏', url: '/series/' },
   { label: '关于', url: '/about/' },
 ] as const;

@@ -9,7 +9,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
       <p class="nf-sub">它可能已被移动、删除，或者从未存在过。</p>
       <div class="nf-actions">
         <a class="btn-primary" href="/">回到首页</a>
-        <a class="btn-ghost" href="/archives/">浏览归档</a>
+        <button type="button" class="btn-ghost" data-search-open>按 Ctrl K 搜索全站</button>
       </div>
     </div>
   </div>
@@ -68,7 +68,9 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
     border-radius: 14px;
     border: 1px solid var(--glass-border);
     background: var(--glass-bg);
+    font: inherit;
     font-weight: 600;
+    cursor: pointer;
     color: var(--fg-muted);
     transition: color var(--tr-fast), border-color var(--tr-fast), transform var(--tr-med);
   }

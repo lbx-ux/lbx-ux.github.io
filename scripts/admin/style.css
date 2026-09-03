@@ -95,6 +95,18 @@ input { font: inherit; color: inherit; }
 }
 .icon-btn:hover { color: var(--fg); background: var(--glass-bg-hover); border-color: var(--glass-border); }
 
+/* 推送上线按钮 */
+.deploy-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 10px;
+  font-size: 0.8rem; font-weight: 600; color: #fff;
+  background: linear-gradient(135deg, #10b981, #059669);
+  transition: filter var(--tr-fast), transform var(--tr-fast);
+}
+.deploy-btn:hover { filter: brightness(1.12); }
+.deploy-btn:active { transform: scale(0.96); }
+.deploy-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* 布局 */
 .layout {
   width: min(1280px, 100% - 32px);
@@ -192,6 +204,10 @@ input { font: inherit; color: inherit; }
   display: inline-block; padding: 1px 9px; margin-right: 4px;
   border-radius: 999px; font-size: 0.72rem;
   border: 1px solid var(--glass-border); color: var(--fg-muted);
+}
+.series-tag {
+  background: rgba(129, 140, 248, 0.16); color: var(--accent-strong);
+  border-color: transparent;
 }
 .draft-badge {
   display: inline-block; padding: 1px 9px; margin-right: 4px;

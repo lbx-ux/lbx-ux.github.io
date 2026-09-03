@@ -6,6 +6,7 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
 import {
   loadConfig, saveConfig, listAllNotes, noteHeadline,
   publishNote, listPosts, updatePostMeta, deletePost, ROOT,
@@ -57,6 +58,22 @@ function serveFile(res, filePath) {
   res.end(fs.readFileSync(filePath));
 }
 
+/* ── git 部署 ─────────────────────────────────────────── */
+const GIT_OPTS = { cwd: ROOT, windowsHide: true, timeout: 120_000, encoding: 'utf-8' };
+const git = (args) =>
+  new Promise((resolve, reject) => {
+    execFile('git', args, GIT_OPTS, (err, stdout, stderr) =>
+      err ? reject(new Error(String(stderr || err.message).trim())) : resolve(String(stdout).trim()),
+    );
+  });
+
+/** 只统计内容目录的变更（博客文章 + 图片），用户手改的其它文件不参与自动提交 */
+function contentChanges() {
+  return git(['status', '--porcelain', '--', 'src/content/blog', 'public/covers'])
+    .then((out) => out.split('\n').filter(Boolean))
+    .catch(() => []);
+}
+
 /* ── 路由 ─────────────────────────────────────────────── */
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${HOST}:${PORT}`);
@@ -89,7 +106,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/publish' && req.method === 'POST') {
       const { rel, ...overrides } = await readBody(req);
       if (!rel) return json(res, 400, { error: '缺少 rel 参数' });
-      const result = publishNote(rel, overrides);
+      const result = await publishNote(rel, overrides);
       return result.error ? json(res, 400, result) : json(res, 200, result);
     }
 
@@ -118,6 +135,61 @@ const server = http.createServer(async (req, res) => {
       if (Number.isInteger(patch.port) && patch.port > 0 && patch.port < 65536) next.port = patch.port;
       saveConfig(next);
       return json(res, 200, { ok: true, config: loadConfig() });
+    }
+
+    /* 发布即上线：git 提交 + 推送（仅内容目录） */
+    if (pathname === '/api/deploy/status' && req.method === 'GET') {
+      let hasRemote = false;
+      try {
+        hasRemote = (await git(['remote', 'get-url', 'origin'])).length > 0;
+      } catch {
+        hasRemote = false;
+      }
+      const changes = await contentChanges();
+      return json(res, 200, { hasRemote, changes });
+    }
+
+    if (pathname === '/api/deploy' && req.method === 'POST') {
+      try {
+        const changes = await contentChanges();
+        if (!changes.length) {
+          return json(res, 200, { ok: true, message: '没有需要推送的变更（内容目录已是最新）' });
+        }
+        let branch;
+        try {
+          branch = await git(['rev-parse', '--abbrev-ref', 'HEAD']);
+        } catch (e) {
+          return json(res, 400, { error: `不是 git 仓库或无法获取分支：${e.message}` });
+        }
+        if (branch === 'HEAD') return json(res, 400, { error: '当前处于 detached HEAD，无法推送' });
+
+        await git(['add', '-A', '--', 'src/content/blog', 'public/covers']);
+        const msg = `publish: 发布后台自动推送（${new Date().toISOString().slice(0, 10)}）`;
+        await git(['commit', '-m', msg]);
+
+        let hasRemote = true;
+        try {
+          await git(['remote', 'get-url', 'origin']);
+        } catch {
+          hasRemote = false;
+        }
+        if (!hasRemote) {
+          return json(res, 200, {
+            ok: true,
+            committed: true,
+            message: `已提交 ${changes.length} 个文件，但尚未配置远程仓库（git remote add origin <地址> 后再推送）`,
+          });
+        }
+        const pushOut = await git(['push', 'origin', branch]);
+        return json(res, 200, {
+          ok: true,
+          committed: true,
+          message: `已推送 ${changes.length} 个文件到 origin/${branch}，GitHub Actions 约 2 分钟后自动上线`,
+          detail: pushOut.slice(-400),
+        });
+      } catch (e) {
+        return json(res, 500, { error: `推送失败：${e.message}` });
+      }
     }
 
     /* 静态页面 */

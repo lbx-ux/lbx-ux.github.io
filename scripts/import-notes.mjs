@@ -47,7 +47,7 @@ if (cmd === 'list') {
     rels.forEach((r) => console.log(`  ${r}`));
     if (await confirm(`共 ${rels.length} 篇，确认？`)) {
       for (const rel of rels) {
-        const r = publishNote(rel, {}, cfg);
+        const r = await publishNote(rel, {}, cfg);
         if (r.error) console.log(`✗ ${rel}: ${r.error}`);
         else console.log(`✓ ${rel}  →  ${r.file}`);
       }

@@ -1,12 +1,14 @@
 ---
-import { getPublishedPosts, getTagMap } from '@/lib/content';
+import { getPublishedPosts, formatDate } from '@/lib/content';
 import { estimateReadingTime } from '@/lib/readingTime';
+import { buildSeriesMap } from '@/lib/series';
 import PostCard from '@/components/PostCard.astro';
 import Pagination from '@/components/Pagination.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import Icon from '@/components/Icon.astro';
 import { SITE_TITLE, SITE_DESCRIPTION, POSTS_PER_PAGE } from '@/consts';
 
-export async function getStaticPaths({ paginate }: import('astro').APIContext) {
+export async function getStaticPaths({ paginate }: import('astro').GetStaticPathsOptions) {
   const posts = await getPublishedPosts();
   return paginate(posts, { pageSize: POSTS_PER_PAGE });
 }
@@ -14,10 +16,16 @@ export async function getStaticPaths({ paginate }: import('astro').APIContext) {
 const { page } = Astro.props;
 // paginate 序列化只保留原始 entry，阅读时长在渲染期重算
 const posts = page.data.map((p) => ({ ...p, readingMinutes: estimateReadingTime(p.body ?? '') }));
-const tagMap = getTagMap(posts);
 const featured = posts[0];
 const rest = posts.slice(1);
 const isFirstPage = page.currentPage === 1;
+
+// 首页专栏区：全量文章分组，取最近更新的 4 个
+const allPosts = isFirstPage
+  ? (await getPublishedPosts()).map((p) => ({ ...p, readingMinutes: estimateReadingTime(p.body ?? '') }))
+  : [];
+const allSeries = isFirstPage ? buildSeriesMap(allPosts) : [];
+const homeSeries = allSeries.slice(0, 4);
 ---
 <BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
   {isFirstPage && (
@@ -42,8 +50,8 @@ const isFirstPage = page.currentPage === 1;
         </div>
         <div class="stat-divider"></div>
         <div class="stat">
-          <span class="stat-num">{tagMap.size}</span>
-          <span class="stat-label">个标签</span>
+          <span class="stat-num">{allSeries.length}</span>
+          <span class="stat-label">个专栏</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat">
@@ -57,7 +65,9 @@ const isFirstPage = page.currentPage === 1;
   <section class="container posts-section" id="posts">
     <div class="section-head reveal">
       <h2 class="section-title">最新文章</h2>
-      <a class="see-all" href="/archives/">查看归档 →</a>
+      <button type="button" class="see-all see-all-btn" data-search-open title="任意页面按 Ctrl+K 呼出搜索">
+        全站搜索 <kbd class="see-all-kbd">Ctrl K</kbd> →
+      </button>
     </div>
 
     <div class="post-grid" data-stagger>
@@ -75,16 +85,26 @@ const isFirstPage = page.currentPage === 1;
   </section>
 
   {
-    isFirstPage && tagMap.size > 0 && (
-      <section class="container tags-section reveal">
-        <h2 class="section-title">标签云</h2>
-        <div class="tag-cloud">
-          {[...tagMap.entries()].map(([tag, count]) => (
-            <a class="pill" href={`/tags/${tag}/`}>
-              {tag}
-              <span class="tag-count">{count}</span>
-            </a>
-          ))}
+    isFirstPage && homeSeries.length > 0 && (
+      <section class="container series-section reveal">
+        <div class="section-head">
+          <h2 class="section-title">技术专栏</h2>
+          <a class="see-all" href="/series/">全部专栏 →</a>
+        </div>
+        <div class="home-series-grid" data-stagger>
+          {
+            homeSeries.map((s) => (
+              <a class="hs-card glass glass-lift" href={`/series/${s.slug}/`}>
+                <div class="hs-head">
+                  <span class="hs-icon"><Icon name="layers" size={16} /></span>
+                  <span class="hs-count">{s.posts.length} 篇</span>
+                </div>
+                <h3 class="hs-name">{s.name}</h3>
+                <p class="hs-latest">最近：{s.posts[0].data.title}</p>
+                <span class="hs-date">{formatDate(s.lastUpdated)}</span>
+              </a>
+            ))
+          }
         </div>
       </section>
     )
@@ -214,6 +234,24 @@ const isFirstPage = page.currentPage === 1;
   .see-all:hover {
     color: var(--accent-strong);
   }
+  .see-all-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+  }
+  .see-all-kbd {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    padding: 1px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--glass-border);
+    color: inherit;
+  }
 
   .post-grid {
     display: grid;
@@ -224,31 +262,71 @@ const isFirstPage = page.currentPage === 1;
     grid-column: 1 / -1;
   }
 
-  /* ── 标签云 ── */
-  .tags-section {
+  /* ── 首页专栏区 ── */
+  .series-section {
     padding-top: var(--space-7);
   }
-  .tag-cloud {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+  .home-series-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
     margin-top: 20px;
   }
-  .tag-count {
+  .hs-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px 20px;
+    cursor: pointer;
+  }
+  .hs-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .hs-icon {
     display: inline-grid;
     place-items: center;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
-    border-radius: 999px;
-    background: rgba(129, 140, 248, 0.18);
-    font-size: 0.6875rem;
-    font-weight: 600;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
     color: var(--accent-strong);
+    background: rgba(129, 140, 248, 0.14);
+  }
+  .hs-count {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--fg-faint);
+  }
+  .hs-name {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  .hs-latest {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--fg-muted);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .hs-date {
+    font-size: 0.75rem;
+    color: var(--fg-faint);
+    font-family: var(--font-mono);
   }
 
+  @media (max-width: 1023px) {
+    .home-series-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
   @media (max-width: 767px) {
     .post-grid {
+      grid-template-columns: 1fr;
+    }
+    .home-series-grid {
       grid-template-columns: 1fr;
     }
     .hero-actions {

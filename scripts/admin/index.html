@@ -22,6 +22,10 @@
     </div>
     <div class="topbar-actions">
       <span id="vault-path" class="vault-path" title="Obsidian 库位置"></span>
+      <button id="btn-deploy" class="deploy-btn" title="提交并推送到 GitHub（自动部署上线）">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
+        推送上线
+      </button>
       <button id="btn-settings" class="icon-btn" title="设置" aria-label="设置">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
@@ -64,8 +68,11 @@
         <label>标题 <input id="f-title" type="text" /></label>
         <label>描述 <input id="f-desc" type="text" placeholder="留空自动提取首段" /></label>
         <div class="meta-row">
-          <label>标签 <input id="f-tags" type="text" placeholder="逗号分隔，留空按目录推断" /></label>
           <label>日期 <input id="f-date" type="date" /></label>
+        </div>
+        <div class="meta-row">
+          <label>专栏 <input id="f-series" type="text" placeholder="留空按目录自动推导" /></label>
+          <label>专栏序号 <input id="f-order" type="text" placeholder="留空自动推导" /></label>
         </div>
         <label class="draft-check">
           <input id="f-draft" type="checkbox" /> 存为草稿（构建时不会公开）

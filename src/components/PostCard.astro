@@ -15,10 +15,6 @@ const url = `/posts/${post.id}/`;
 ---
 <article class:list={['post-card', 'glass', 'glass-lift', 'glass-sheen', 'reveal', { featured }]}>
   <div class="card-body">
-    <div class="card-tags">
-      {post.data.tags.slice(0, 3).map((tag) => <span class="pill">{tag}</span>)}
-    </div>
-
     <h2 class="card-title">
       <a href={url} class="card-link">{post.data.title}</a>
     </h2>
@@ -54,20 +50,6 @@ const url = `/posts/${post.id}/`;
     gap: 12px;
     padding: 22px 26px 24px;
     flex: 1;
-  }
-
-  .card-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .card-tags .pill {
-    padding: 3px 12px;
-    font-size: 0.75rem;
-    background: rgba(0, 0, 0, 0.25);
-  }
-  [data-theme='light'] .card-tags .pill {
-    background: rgba(255, 255, 255, 0.5);
   }
 
   .card-title {
