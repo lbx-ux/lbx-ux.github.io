@@ -7,6 +7,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "check": "astro check",
     "og": "node scripts/generate-og.mjs",
     "note": "node scripts/import-notes.mjs",
     "astro": "astro"
@@ -18,9 +19,11 @@
     "gsap": "^3.13.0"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.10",
     "@fontsource-variable/jetbrains-mono": "^5.2.0",
     "@fontsource-variable/outfit": "^5.2.0",
     "@fontsource/noto-sans-sc": "^5.2.0",
-    "sharp": "^0.34.0"
+    "sharp": "^0.34.0",
+    "typescript": "^5.9.3"
   }
 }

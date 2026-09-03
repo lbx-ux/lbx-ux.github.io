@@ -10,20 +10,37 @@ import sitemap from '@astrojs/sitemap';
 const SITE = 'https://lbx-ux.github.io';
 const BASE = '/';
 
+/** 正文图片懒加载：构建期为 Markdown 里的 <img> 注入 loading/decoding，零运行时开销 */
+function rehypeLazyImages() {
+  return (tree) => {
+    const visit = (node) => {
+      if (node.type === 'element' && node.tagName === 'img') {
+        node.properties.loading ??= 'lazy';
+        node.properties.decoding ??= 'async';
+      }
+      (node.children ?? []).forEach(visit);
+    };
+    visit(tree);
+  };
+}
+
 export default defineConfig({
   site: SITE,
   base: BASE,
   trailingSlash: 'ignore',
   output: 'static',
   devToolbar: { enabled: false },
+  // 悬停预取内链，配合 ClientRouter 视图过渡近乎秒开
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
   integrations: [
     sitemap({
       // sitemap 链接会自动带上 base
+      // 不设全局 lastmod：避免每次构建把全站标成"刚更新"，干扰搜索引擎
       changefreq: 'weekly',
-      lastmod: new Date(),
     }),
   ],
   markdown: {
+    rehypePlugins: [rehypeLazyImages],
     // 暗色用 one-dark-pro，浅色用 one-light；CSS 变量双主题切换见 prose.css
     shikiConfig: {
       themes: { light: 'one-light', dark: 'one-dark-pro' },
