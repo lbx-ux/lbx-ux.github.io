@@ -21,14 +21,20 @@ const DEFAULT_CONFIG = {
   /**
    * 专栏（series）推导规则：按 source 路径子串匹配，先专后泛；
    * 都不命中时兜底 = source 顶层目录名。
+   * 规则与已发布文章的 series 命名保持一致（2026-09 手工整理后的 10 个专栏），
+   * 改名前先确认不会把既有专栏拆成新名字。
    */
   seriesRules: [
     { match: '算法/', series: '左神算法笔记' },
-    { match: 'Mysql/1.', series: 'MySQL 入门' },
-    { match: 'Mysql/2.', series: 'MySQL 进阶' },
-    { match: 'Redis/1.', series: 'Redis 基础' },
-    { match: 'Redis/2.', series: 'Redis 高级' },
-    { match: 'SpringCloud', series: 'SpringCloud 实战' },
+    { match: 'Mysql/', series: 'MySQL' },
+    { match: 'Redis/', series: 'Redis' },
+    { match: 'Mybatis', series: 'Mybatis' },
+    { match: 'SSM/Spring', series: 'Spring' },
+    { match: 'SpringCloud', series: 'SpringCloud' },
+    { match: 'RabbitMQ', series: 'RabbitMQ' },
+    { match: '实战/存储技术', series: '存储技术' },
+    { match: '实战/登录技术', series: '登录技术' },
+    { match: '实战/验证码', series: '验证码' },
   ],
 };
 
