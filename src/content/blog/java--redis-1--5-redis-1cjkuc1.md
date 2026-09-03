@@ -2,7 +2,6 @@
 title: 六. Redis缓存
 description: 一.Redis缓存Redis作为缓存（Cache）是它在实际项目中最核心、最常见的应用场景。它的主要作用是挡在关系型数据库（如MySQL）前面，替数据库抵挡高并发的读请求。因为Redis是基于内存的，
 pubDate: 2026-08-23
-tags: [Redis]
 series: Redis
 order: 6
 source: Java后端/数据库/Redis/1.基础/5. Redis缓存.md
@@ -39,7 +38,7 @@ Redis 作为缓存（Cache）是它在实际项目中最核心、最常见的应
 
 **现象：** 用户频繁查询一个**在数据库和缓存中都不存在的数据**（比如恶意伪造的用户 ID：-1）。由于缓存不命中，每次请求都会打到数据库上，导致数据库压力剧增甚至宕机。
 
-![image-20260812163550318](/covers/java--redis-1--5-redis-1cjkuc1/image-20260812163550318.png)
+![image-20260812163550318](/covers/java--redis-1--5-redis-1cjkuc1/image-20260812163550318.webp)
 
 **解决方案：**
 
@@ -107,7 +106,7 @@ Redis 作为缓存（Cache）是它在实际项目中最核心、最常见的应
 
 **业务实例：**
 
-<img src="/covers/java--redis-1--5-redis-1cjkuc1/image-20260812164203904.png" alt="image-20260812164203904" style="zoom:67%;" />
+<img src="/covers/java--redis-1--5-redis-1cjkuc1/image-20260812164203904.webp" alt="image-20260812164203904" style="zoom:67%;" />
 
 ```java
 	    // 1. 从 Redis 中获取缓存
@@ -148,10 +147,10 @@ Redis 作为缓存（Cache）是它在实际项目中最核心、最常见的应
 **解决方案：**
 
 - **互斥锁 (Mutex Lock)：** 发现缓存未命中时，不立刻去查数据库，而是先去尝试获取一个分布式锁。拿到锁的线程去查数据库并重建缓存；没拿到锁的线程休眠一会再重试读缓存。
-  - <img src="/covers/java--redis-1--5-redis-1cjkuc1/image-20260812171123814.png" alt="image-20260812171123814" style="zoom:67%;" />
+  - <img src="/covers/java--redis-1--5-redis-1cjkuc1/image-20260812171123814.webp" alt="image-20260812171123814" style="zoom:67%;" />
 
 - **逻辑过期：** 热点数据在 Redis 中不设置物理过期时间，而是在 Value 内部存一个“逻辑过期时间”字段。发现逻辑过期后，异步开启一个线程去更新缓存，当前请求依然快速返回旧数据。
-  - <img src="/covers/java--redis-1--5-redis-1cjkuc1/image-20260812171158600.png" alt="image-20260812171158600" style="zoom:67%;" />
+  - <img src="/covers/java--redis-1--5-redis-1cjkuc1/image-20260812171158600.webp" alt="image-20260812171158600" style="zoom:67%;" />
 
 | **方案**     | **数据一致性**                   | **性能**                 | **适用场景**                                         |
 | ------------ | -------------------------------- | ------------------------ | ---------------------------------------------------- |
@@ -166,7 +165,7 @@ Redis 作为缓存（Cache）是它在实际项目中最核心、最常见的应
 
 如果获取到了锁的线程，再去进行查询，查询后将数据写入redis，再释放锁，返回数据，利用互斥锁就能保证只有一个线程去执行操作数据库的逻辑，防止缓存击穿
 
-![1653357860001](/covers/java--redis-1--5-redis-1cjkuc1/1653357860001.png)
+![1653357860001](/covers/java--redis-1--5-redis-1cjkuc1/1653357860001.webp)
 
 **操作锁的代码：**
 
@@ -264,7 +263,7 @@ Redis 作为缓存（Cache）是它在实际项目中最核心、最常见的应
 
 思路分析：当用户开始查询redis时，判断是否命中，如果没有命中则直接返回空数据，不查询数据库，而一旦命中后，将value取出，判断value中的过期时间是否满足，如果没有过期，则直接返回redis中的数据，如果过期，则在开启独立线程后直接返回之前的数据，独立线程去重构数据，重构完成后释放互斥锁。
 
-<img src="/covers/java--redis-1--5-redis-1cjkuc1/1653360308731.png" alt="1653360308731" style="zoom:67%;" />
+<img src="/covers/java--redis-1--5-redis-1cjkuc1/1653360308731.webp" alt="1653360308731" style="zoom:67%;" />
 
 **步骤一**
 
@@ -350,7 +349,7 @@ public void saveShopRedis(Long id, Long expireSeconds){
 
 **现象：** 大量的热点 Key 在**同一时间集中过期**，或者 **Redis 节点直接宕机**，导致原本由缓存承担的巨大流量像雪崩一样全部压向数据库。
 
-<img src="/covers/java--redis-1--5-redis-1cjkuc1/image-20260812174102513.png" alt="image-20260812174102513" style="zoom:67%;" />
+<img src="/covers/java--redis-1--5-redis-1cjkuc1/image-20260812174102513.webp" alt="image-20260812174102513" style="zoom:67%;" />
 
 **解决方案：**
 

@@ -2,7 +2,6 @@
 title: 二.DDL
 description: DataDefinitionLanguage,数据定义语言,用来定义数据库对象(数据库,表,字段)。
 pubDate: 2026-08-20
-tags: [MySQL]
 series: MySQL
 order: 2
 source: Java后端/数据库/Mysql/1. 基础/2.1.DDL.md
@@ -95,7 +94,7 @@ show create table 表名;
 比desc更加详细
 ```
 
-<img src="/covers/java--mysql-1--2-1-ddl-1q8w65z/image-20260125123556028.png" alt="image-20260125123556028" style="zoom: 50%;" />
+<img src="/covers/java--mysql-1--2-1-ddl-1q8w65z/image-20260125123556028.webp" alt="image-20260125123556028" style="zoom: 50%;" />
 
 
 ### 4. 创建表结构

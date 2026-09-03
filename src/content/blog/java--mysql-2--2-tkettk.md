@@ -2,7 +2,6 @@
 title: 九.索引
 description: 一.介绍索引（index）是帮助MySQL高效获取数据的数据结构(有序)。在数据之外，数据库系统还维护着满足特定查找算法的数据结构，这些数据结构以某种方式引用（指向）数据，这样就可以在这些数据结构上实
 pubDate: 2026-08-20
-tags: [MySQL]
 series: MySQL
 order: 9
 source: Java后端/数据库/Mysql/2. 进阶/2.索引.md
@@ -49,12 +48,12 @@ MySQL的索引是在存储引擎层实现的，不同的存储引擎有不同的
 
 假如说MySQL的索引结构采用二叉树的数据结构，比较理想的结构如下：
 
-![image-20260818165204995](/covers/java--mysql-2--2-tkettk/image-20260818165204995.png)
+![image-20260818165204995](/covers/java--mysql-2--2-tkettk/image-20260818165204995.webp)
 
 
 如果主键是顺序插入的，则会形成一个单向链表，结构如下：
 
-![image-20260818165309281](/covers/java--mysql-2--2-tkettk/image-20260818165309281.png)
+![image-20260818165309281](/covers/java--mysql-2--2-tkettk/image-20260818165309281.webp)
 
 
 所以，如果选择二叉树作为索引结构，会存在以下缺点：
@@ -65,7 +64,7 @@ MySQL的索引是在存储引擎层实现的，不同的存储引擎有不同的
 
 此时大家可能会想到，我们可以选择红黑树，红黑树是一颗自平衡二叉树，那这样即使是顺序插入数据，最终形成的数据结构也是一颗平衡的二叉树，结构如下：
 
-![image-20260818165452226](/covers/java--mysql-2--2-tkettk/image-20260818165452226.png)
+![image-20260818165452226](/covers/java--mysql-2--2-tkettk/image-20260818165452226.webp)
 
 
 但是，即使如此，由于红黑树也是一颗二叉树，所以也会存在一个缺点：
@@ -82,7 +81,7 @@ B-Tree，B树是一种**多路平衡查找树**，相对于二叉树，B树每�
 
 以一颗最大度数（max-degree）为5(5阶)的b-tree为例，那这个B树每个节点最多存储4个key，5个指针：
 
-![image-20260818165716817](/covers/java--mysql-2--2-tkettk/image-20260818165716817.png)
+![image-20260818165716817](/covers/java--mysql-2--2-tkettk/image-20260818165716817.webp)
 
 
 知识小贴士：树的度数指的是一个节点的子节点个数。
@@ -101,7 +100,7 @@ B-Tree，B树是一种**多路平衡查找树**，相对于二叉树，B树每�
 
 B+Tree是B-Tree的变种，我们以一颗最大度数（max-degree）为4（4阶）的b+tree为例，来看一下其结构示意图：
 
-![image-20260818170946044](/covers/java--mysql-2--2-tkettk/image-20260818170946044.png)
+![image-20260818170946044](/covers/java--mysql-2--2-tkettk/image-20260818170946044.webp)
 
 
 我们可以看到，两部分：
@@ -124,7 +123,7 @@ B+Tree是B-Tree的变种，我们以一颗最大度数（max-degree）为4（4�
 
 MySQL索引数据结构对经典的B+Tree进行了优化。在原B+Tree的基础上，增加一个指向相邻叶子节点的链表指针，就形成了带有顺序指针（循环双向链表）的B+Tree，提高区间访问的性能，利于排序。
 
-![image-20260818171516365](/covers/java--mysql-2--2-tkettk/image-20260818171516365.png)
+![image-20260818171516365](/covers/java--mysql-2--2-tkettk/image-20260818171516365.webp)
 
 - **非叶子节点仅存索引与指针**：不包含任何行记录数据（Data），仅保存 `Key` 以及指向下级子节点的 `Pointer`。
 - **数据全量沉淀在叶子节点**：所有记录（完整的行数据或主键 ID）全部保存在叶子节点中。非叶子节点出现的 Key 必然会再次出现在叶子节点中。
@@ -177,12 +176,12 @@ B+ 树与 B-Tree 在节点溢出时的分裂逻辑存在本质不同：
 
 哈希索引就是采用一定的hash算法，将键值换算成新的hash值，映射到对应的槽位上，然后存储在hash表中。
 
-![image-20260818180109528](/covers/java--mysql-2--2-tkettk/image-20260818180109528.png)
+![image-20260818180109528](/covers/java--mysql-2--2-tkettk/image-20260818180109528.webp)
 
 
 如果两个 (或多个) 键值，映射到一个相同的槽位上，他们就产生了hash冲突（也称为hash碰撞），可以通过链表来解决。
 
-![image-20260818180150819](/covers/java--mysql-2--2-tkettk/image-20260818180150819.png)
+![image-20260818180150819](/covers/java--mysql-2--2-tkettk/image-20260818180150819.webp)
 
 A. Hash索引只能用于对等比较 (=, in), 不支持范围查询 (between, >, <, <)
 
@@ -233,7 +232,7 @@ MySQL 的索引通常从**数据结构**、**物理存储**、**逻辑约束**�
 
 
 
-![image-20260818190023888](/covers/java--mysql-2--2-tkettk/image-20260818190023888.png)
+![image-20260818190023888](/covers/java--mysql-2--2-tkettk/image-20260818190023888.webp)
 
 
 
@@ -255,7 +254,7 @@ select * from user where name='Arm'；
 
 **回表查询：这种先到二级索引中查找数据，找到主键值，然后再到聚集索引中根据主键值，获取数据的方式，就称之为回表查询。**
 
-![image-20260818190141225](/covers/java--mysql-2--2-tkettk/image-20260818190141225.png)
+![image-20260818190141225](/covers/java--mysql-2--2-tkettk/image-20260818190141225.webp)
 
 
 

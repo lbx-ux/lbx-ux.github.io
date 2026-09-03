@@ -2,7 +2,6 @@
 title: 二. BitMap
 description: 一.BitMap1.BitMap介绍我们按月来统计用户签到信息，签到记录为1，未签到则记录为0.把每一个bit位对应当月的每一天，形成了映射关系。用0和1标示业务状态，这种思路就称为位图（BitMap
 pubDate: 2026-08-23
-tags: [Redis]
 series: Redis
 order: 2
 source: Java后端/数据库/Redis/1.基础/2. 特殊类型.md
@@ -18,7 +17,7 @@ source: Java后端/数据库/Redis/1.基础/2. 特殊类型.md
 
 Redis中是利用string类型数据结构实现BitMap，因此最大上限是512M，转换为bit则是 2^32个bit位。
 
-![1653824498278](/covers/java--redis-1--2-g5tivn/1653824498278.png)
+![1653824498278](/covers/java--redis-1--2-g5tivn/1653824498278.webp)
 
 
 
@@ -350,7 +349,7 @@ int day = now.getDayOfMonth();
 **问题1：**什么叫做连续签到天数？
 从最后一次签到开始向前统计，直到遇到第一次未签到为止，计算总的签到次数，就是连续签到天数。
 
-![1653834455899](/covers/java--redis-1--2-g5tivn/1653834455899.png)
+![1653834455899](/covers/java--redis-1--2-g5tivn/1653834455899.webp)
 
 Java逻辑代码：获得当前这个月的最后一次签到数据，定义一个计数器，然后不停的向前统计，直到获得第一个非0的数字即可，每得到一个非0的数字计数器+1，直到遍历完所有的数据，就可以获得当前月的签到总天数了
 

@@ -2,7 +2,6 @@
 title: 五.DCL
 description: DCLDCL英文全称是DataControlLanguage（数据控制语言），用来管理数据库用户控制数据库的访问权限。1.查询用户sqlusemysql;selectfromuser;!image20
 pubDate: 2026-08-20
-tags: [MySQL]
 series: MySQL
 order: 5
 source: Java后端/数据库/Mysql/1. 基础/2.4.DCL.md
@@ -19,7 +18,7 @@ use mysql;
 select * from user;
 ```
 
-![image-20260125213547981](/covers/java--mysql-1--2-4-dcl-1qajjx7/image-20260125213547981.png)
+![image-20260125213547981](/covers/java--mysql-1--2-4-dcl-1qajjx7/image-20260125213547981.webp)
 
 其中 Host代表当前用户访问的主机，如果为localhost，仅代表只能够在当前本机访问，是不可以远程访问的。User代表的是访问该数据库的用户名。在MySQL中需要通过Host和User来唯一标识一个用户。
 

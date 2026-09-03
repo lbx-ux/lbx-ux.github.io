@@ -2,7 +2,6 @@
 title: 三. SDS
 description: 在Redis7.0及之后版本中，最核心的底层变革是彻底废除了ziplist（压缩列表），全面由listpack（紧凑列表）替代，以彻底解决连锁更新（CascadingUpdates）问题。类型Redi
 pubDate: 2026-08-23
-tags: [Redis]
 series: Redis
 order: 3
 source: Java后端/数据库/Redis/1.基础/3. 底层数据结构.md
@@ -116,7 +115,7 @@ Redis 的 String 对象在底层封装为 `redisObject` 结构体，根据存储
 
 当存储的值为整数，并且这个整数值可以用long类型来表示，Redis 会使用 `int` 编码。
 
-<img src="/covers/java--redis-1--3-gzct2l/image-20260823180142665.png" alt="image-20260823180142665" style="zoom:67%;" />
+<img src="/covers/java--redis-1--3-gzct2l/image-20260823180142665.webp" alt="image-20260823180142665" style="zoom:67%;" />
 
 - **实现原理**：`redisObject` 中的 `ptr` 原本是指向具体底层结构的指针（占 8 字节）。对于整数值，Redis 直接将 `void*` 指针强转**直接存储该整数值**，**无需额外分配任何 SDS 内存**。
 - **共享对象池**：Redis 启动时会预先初始化 `0` 到 `9999` 的共享整数对象，当存储这些区间内的数字时，多个 Key 直接复用相同的 `redisObject`，进一步节省内存（注：若开启 LRU/LFU 淘汰策略，共享对象会失效）。
@@ -127,7 +126,7 @@ Redis 的 String 对象在底层封装为 `redisObject` 结构体，根据存储
 
 专为短字符串设计的紧凑型只读编码。
 
-<img src="/covers/java--redis-1--3-gzct2l/image-20260823180527132.png" alt="image-20260823180527132" style="zoom:80%;" />
+<img src="/covers/java--redis-1--3-gzct2l/image-20260823180527132.webp" alt="image-20260823180527132" style="zoom:80%;" />
 
 - **实现原理**：将元数据结构 `redisObject` 和底层字符串 `sdshdr8` 分配在**同一块连续的内存区域**中。
 
@@ -156,7 +155,7 @@ Redis 的 String 对象在底层封装为 `redisObject` 结构体，根据存储
 
 适用于长字符串或需要频繁追加、动态扩展的场景。
 
-<img src="/covers/java--redis-1--3-gzct2l/image-20260823180620112.png" alt="image-20260823180620112" style="zoom: 67%;" />
+<img src="/covers/java--redis-1--3-gzct2l/image-20260823180620112.webp" alt="image-20260823180620112" style="zoom: 67%;" />
 
 - **实现原理**：`redisObject` 与 `SDS` 分别独立分配在两块不连续的内存空间中，`redisObject.ptr` 存储指向该 `SDS` 的内存地址，需要调用 **2 次 `malloc`** 分别创建 `redisObject` 与独立的大块 `SDS`。
 - **适用场景**：字符串长度超过 44 字节，或者频繁进行修改、追加操作的字符串。
@@ -210,7 +209,7 @@ typedef struct listNode {
 } listNode;
 ```
 
-<img src="/covers/java--redis-1--3-gzct2l/image-20260823181523333.png" alt="image-20260823181523333" style="zoom:67%;" />
+<img src="/covers/java--redis-1--3-gzct2l/image-20260823181523333.webp" alt="image-20260823181523333" style="zoom:67%;" />
 
 ```c
 /* 双向链表控制器 */
@@ -226,7 +225,7 @@ typedef struct list {
 
 list 结构为链表提供了链表头指针 head、链表尾节点 tail、链表节点数量 len、以及可以⾃定义实现的 dup、free、match 函数。
 
-<img src="/covers/java--redis-1--3-gzct2l/image-20260823181626055.png" alt="image-20260823181626055" style="zoom:67%;" />
+<img src="/covers/java--redis-1--3-gzct2l/image-20260823181626055.webp" alt="image-20260823181626055" style="zoom:67%;" />
 
 
 
@@ -306,7 +305,7 @@ list 结构为链表提供了链表头指针 head、链表尾节点 tail、链�
 
 Ziplist 将所有元数据和节点内容紧凑地存放在一块连续分配的内存空间中，没有任何指针开销：
 
-![image-20260823183530079](/covers/java--redis-1--3-gzct2l/image-20260823183530079.png)
+![image-20260823183530079](/covers/java--redis-1--3-gzct2l/image-20260823183530079.webp)
 
 | **字段**      | **字节大小**         | **作用与含义**                                               |
 | ------------- | -------------------- | ------------------------------------------------------------ |
@@ -324,7 +323,7 @@ Ziplist 将所有元数据和节点内容紧凑地存放在一块连续分配的
 
 每个 `entry` 节点包含三部分，专门通过可变长度编码（Variable-length Encoding）压缩空间：
 
-![image-20260823184135674](/covers/java--redis-1--3-gzct2l/image-20260823184135674.png)
+![image-20260823184135674](/covers/java--redis-1--3-gzct2l/image-20260823184135674.webp)
 
 1. **`prevlen`（前置节点长度）**：
    - **作用**：记录前一个节点的字节长度，用于**从后往前遍历**
@@ -364,19 +363,19 @@ Ziplist 将所有元数据和节点内容紧凑地存放在一块连续分配的
 
 现在假设⼀个压缩列表中有多个连续的、长度在 250～253 之间的节点，如下图：
 
-![image-20260823191311457](/covers/java--redis-1--3-gzct2l/image-20260823191311457.png)
+![image-20260823191311457](/covers/java--redis-1--3-gzct2l/image-20260823191311457.webp)
 
 因为这些节点长度值⼩于 254 字节，所以 prevlen 属性需要⽤ 1 字节的空间来保存这个长度值。
 
 这时，如果将⼀个长度⼤于等于 254 字节的新节点加⼊到压缩列表的表头节点，即新节点将成为 e1 的前置节点，如下图：
 
-![image-20260823191409086](/covers/java--redis-1--3-gzct2l/image-20260823191409086.png)
+![image-20260823191409086](/covers/java--redis-1--3-gzct2l/image-20260823191409086.webp)
 
 因为 e1 节点的 prevlen 属性只有 1 个字节⼤⼩，⽆法保存新节点的长度，此时就需要对压缩列表的空间重分配操作，并将 e1 节点的 prevlen 属性从原来的 1 字节⼤⼩扩展为 5 字节⼤⼩。
 
 多⽶诺牌的效应就此开始。
 
-![image-20260823191514621](/covers/java--redis-1--3-gzct2l/image-20260823191514621.png)
+![image-20260823191514621](/covers/java--redis-1--3-gzct2l/image-20260823191514621.webp)
 
 e1 原本的长度在 250～253 之间，因为刚才的扩展空间，此时 e1 的长度就⼤于等于 254 了，因此原本 e2 保存 e1 的prevlen 属性也必须从 1 字节扩展⾄ 5 字节⼤⼩。
 
@@ -407,7 +406,7 @@ e1 原本的长度在 250～253 之间，因为刚才的扩展空间，此时 e1
 
 listpack 采⽤了压缩列表的很多优秀的设计，⽐如还是⽤⼀块连续的内存空间来紧凑地保存数据，并且为了节省内存的开销，listpack 节点会采⽤不同的编码⽅式保存不同⼤⼩的数据。
 
-![image-20260823192921148](/covers/java--redis-1--3-gzct2l/image-20260823192921148.png)
+![image-20260823192921148](/covers/java--redis-1--3-gzct2l/image-20260823192921148.webp)
 
 
 
@@ -415,7 +414,7 @@ listpack 采⽤了压缩列表的很多优秀的设计，⽐如还是⽤⼀块�
 
 与 Ziplist 最大不同的是：**Listpack 节点不再记录前一个节点的长度，而是记录自身长度**。
 
-![image-20260823193013415](/covers/java--redis-1--3-gzct2l/image-20260823193013415.png)
+![image-20260823193013415](/covers/java--redis-1--3-gzct2l/image-20260823193013415.webp)
 
 1. **`encoding`（编码字段）**：
    - 记录数据的类型（整数还是字符串）以及 `data` 部分的长度。
@@ -482,7 +481,7 @@ listpack 采⽤了压缩列表的很多优秀的设计，⽐如还是⽤⼀块�
 
 ### 结构设计
 
-![image-20260823194905008](/covers/java--redis-1--3-gzct2l/image-20260823194905008.png)
+![image-20260823194905008](/covers/java--redis-1--3-gzct2l/image-20260823194905008.webp)
 
 
 
@@ -525,7 +524,7 @@ Quicklist 引入了基于 **LZF 算法** 的中间节点透明压缩机制：
 
 Redis 字典底层由字典控制器 `dict`、哈希表 `dictht`（Redis 7.0 整合优化为单表结构，但逻辑结构一致）以及哈希节点 `dictEntry` 组成：
 
-![image-20260823201554458](/covers/java--redis-1--3-gzct2l/image-20260823201554458.png)
+![image-20260823201554458](/covers/java--redis-1--3-gzct2l/image-20260823201554458.webp)
 
 
 
@@ -556,7 +555,7 @@ typedef struct dictEntry {
 
 **链式哈希与头插法**：
 
-![image-20260823201827596](/covers/java--redis-1--3-gzct2l/image-20260823201827596.png)
+![image-20260823201827596](/covers/java--redis-1--3-gzct2l/image-20260823201827596.webp)
 
 - 当不同 Key 命中同一槽位时，通过 `dictEntry.next` 形成单向链表。
 - **单链表头插**：新节点总是直接插入到链表头部（$O(1)$），避免了遍历链表至尾部的开销。
@@ -587,7 +586,7 @@ $$\text{Load Factor} = \frac{\text{已存节点数 } (\text{used})}{\text{哈希
 2. 将「哈希表 1 」的数据迁移到「哈希表 2」中；
 3. 迁移完成后，「哈希表 1 」的空间会被释放，并把「哈希表 2」设置为「哈希表 1」，然后在「哈希表 2」新创建⼀个空⽩的哈希表，为下次 rehash 做准备。
 
-<img src="/covers/java--redis-1--3-gzct2l/image-20260823202314632.png" alt="image-20260823202314632" style="zoom:67%;" />
+<img src="/covers/java--redis-1--3-gzct2l/image-20260823202314632.webp" alt="image-20260823202314632" style="zoom:67%;" />
 
 这个过程看起来简单，但是其实第⼆步很有问题，如果「哈希表 **1** 」的数据量⾮常⼤，那么在迁移⾄「哈希表 **2** 」的时候，因为会涉及⼤量的数据拷贝，此时可能会对 **Redis** 造成阻塞，⽆法服务其他请求。
 
@@ -761,7 +760,7 @@ typedef struct zskiplist {
 
 那跳表长什么样呢？下图展⽰了⼀个层级为 3 的跳表。
 
-![image-20260823205658642](/covers/java--redis-1--3-gzct2l/image-20260823205658642.png)
+![image-20260823205658642](/covers/java--redis-1--3-gzct2l/image-20260823205658642.webp)
 
 头节点有 L0~L2 三个头指针，分别指向了不同层级的节点，然后每个层级的节点都通过指针连接起来：
 
@@ -779,7 +778,7 @@ level 数组中的每⼀个元素代表跳表的⼀层，也就是由 zskiplistL
 
 下⾯这张图，展⽰了各个节点的跨度。
 
-![image-20260823210437975](/covers/java--redis-1--3-gzct2l/image-20260823210437975.png)
+![image-20260823210437975](/covers/java--redis-1--3-gzct2l/image-20260823210437975.webp)
 
 跨度实际上是为了计算这个节点在跳表中的排位。具体怎么做的呢？因为跳表中的节点都是按序排列的，那么计算某个节点排位的时候，从头节点点到该结点的查询路径上，将沿途访问过的所有层的跨度累加起来，得到的结果就是⽬标节点在跳表中的排位。
 
@@ -832,7 +831,7 @@ Redis 在每个前进指针上记录了 `span`（跨度）。
 
 举个例⼦，下图有个 3 层级的跳表。
 
-![image-20260823210713377](/covers/java--redis-1--3-gzct2l/image-20260823210713377.png)
+![image-20260823210713377](/covers/java--redis-1--3-gzct2l/image-20260823210713377.webp)
 
 如果要查找「元素：abcd，权重：4」的节点，查找的过程是这样的：
 

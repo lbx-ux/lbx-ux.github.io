@@ -2,7 +2,6 @@
 title: 十.Redis分片集群
 description: Redis分片集群Redis分片集群（RedisCluster）是Redis官方提供的一种分布式解决方案。它的核心思想是将数据自动拆分（Sharding）到多个不同的Redis节点上，从而突破单台物理
 pubDate: 2026-08-23
-tags: [Redis]
 series: Redis
 order: 10
 source: Java后端/数据库/Redis/2.高级/3. 分片集群.md
@@ -118,7 +117,7 @@ Redis 分片集群的设计非常精巧，主要由以下几个核心机制构�
 
 使用分片集群可以解决上述问题，如图:
 
-![image-20210725155747294](/covers/java--redis-2--3-3k2g20/image-20210725155747294.png)
+![image-20210725155747294](/covers/java--redis-2--3-3k2g20/image-20210725155747294.webp)
 
 
 
@@ -136,7 +135,7 @@ Redis 分片集群的设计非常精巧，主要由以下几个核心机制构�
 
 具体搭建流程参考课前资料《Redis集群.md》：
 
-![image-20210725155806288](/covers/java--redis-2--3-3k2g20/image-20210725155806288.png) 
+![image-20210725155806288](/covers/java--redis-2--3-3k2g20/image-20210725155806288.webp) 
 
 
 
@@ -146,7 +145,7 @@ Redis 分片集群的设计非常精巧，主要由以下几个核心机制构�
 
 Redis会把每一个master节点映射到0~16383共16384个插槽（hash slot）上，查看集群信息时就能看到：
 
-![image-20210725155820320](/covers/java--redis-2--3-3k2g20/image-20210725155820320.png)
+![image-20210725155820320](/covers/java--redis-2--3-3k2g20/image-20210725155820320.webp)
 
 
 
@@ -161,7 +160,7 @@ Redis会把每一个master节点映射到0~16383共16384个插槽（hash slot）
 
 例如：key是num，那么就根据num计算，如果是{itcast}num，则根据itcast计算。计算方式是利用CRC16算法得到一个hash值，然后对16384取余，得到的结果就是slot值。
 
-![image-20210725155850200](/covers/java--redis-2--3-3k2g20/image-20210725155850200.png) 
+![image-20210725155850200](/covers/java--redis-2--3-3k2g20/image-20210725155850200.webp) 
 
 如图，在7001这个节点执行set a 1时，对a做hash运算，对16384取余，得到的结果是15495，因此要存储到103节点。
 
@@ -191,11 +190,11 @@ Redis如何判断某个key应该在哪个实例？
 
 redis-cli --cluster提供了很多操作集群的命令，可以通过下面方式查看：
 
-![image-20210725160138290](/covers/java--redis-2--3-3k2g20/image-20210725160138290.png)
+![image-20210725160138290](/covers/java--redis-2--3-3k2g20/image-20210725160138290.webp)
 
 比如，添加节点的命令：
 
-![image-20210725160448139](/covers/java--redis-2--3-3k2g20/image-20210725160448139.png)
+![image-20210725160448139](/covers/java--redis-2--3-3k2g20/image-20210725160448139.webp)
 
 
 
@@ -248,7 +247,7 @@ redis-server 7004/redis.conf
 
 添加节点的语法如下：
 
-![image-20210725160448139](/covers/java--redis-2--3-3k2g20/image-20210725160448139-1777264773695-396.png)
+![image-20210725160448139](/covers/java--redis-2--3-3k2g20/image-20210725160448139-1777264773695-396.webp)
 
 
 
@@ -270,7 +269,7 @@ redis-cli -p 7001 cluster nodes
 
 如图，7004加入了集群，并且默认是一个master节点：
 
-![image-20210725161007099](/covers/java--redis-2--3-3k2g20/image-20210725161007099.png)
+![image-20210725161007099](/covers/java--redis-2--3-3k2g20/image-20210725161007099.webp)
 
 但是，可以看到7004节点的插槽数量为0，因此没有任何数据可以存储到7004上
 
@@ -280,7 +279,7 @@ redis-cli -p 7001 cluster nodes
 
 我们要将num存储到7004节点，因此需要先看看num的插槽是多少：
 
-![image-20210725161241793](/covers/java--redis-2--3-3k2g20/image-20210725161241793.png)
+![image-20210725161241793](/covers/java--redis-2--3-3k2g20/image-20210725161241793.webp)
 
 如上图所示，num的插槽为2765.
 
@@ -288,7 +287,7 @@ redis-cli -p 7001 cluster nodes
 
 我们可以将0~3000的插槽从7001转移到7004，命令格式如下：
 
-![image-20210725161401925](/covers/java--redis-2--3-3k2g20/image-20210725161401925.png)
+![image-20210725161401925](/covers/java--redis-2--3-3k2g20/image-20210725161401925.webp)
 
 
 
@@ -296,11 +295,11 @@ redis-cli -p 7001 cluster nodes
 
 建立连接：
 
-![image-20210725161506241](/covers/java--redis-2--3-3k2g20/image-20210725161506241.png)
+![image-20210725161506241](/covers/java--redis-2--3-3k2g20/image-20210725161506241.webp)
 
 得到下面的反馈：
 
-![image-20210725161540841](/covers/java--redis-2--3-3k2g20/image-20210725161540841.png)
+![image-20210725161540841](/covers/java--redis-2--3-3k2g20/image-20210725161540841.webp)
 
 
 
@@ -308,17 +307,17 @@ redis-cli -p 7001 cluster nodes
 
 新的问题来了：
 
-![image-20210725161637152](/covers/java--redis-2--3-3k2g20/image-20210725161637152.png)
+![image-20210725161637152](/covers/java--redis-2--3-3k2g20/image-20210725161637152.webp)
 
 那个node来接收这些插槽？？
 
 显然是7004，那么7004节点的id是多少呢？
 
-![image-20210725161731738](/covers/java--redis-2--3-3k2g20/image-20210725161731738.png)
+![image-20210725161731738](/covers/java--redis-2--3-3k2g20/image-20210725161731738.webp)
 
 复制这个id，然后拷贝到刚才的控制台后：
 
-![image-20210725161817642](/covers/java--redis-2--3-3k2g20/image-20210725161817642.png)
+![image-20210725161817642](/covers/java--redis-2--3-3k2g20/image-20210725161817642.webp)
 
 这里询问，你的插槽是从哪里移动过来的？
 
@@ -330,21 +329,21 @@ redis-cli -p 7001 cluster nodes
 
 这里我们要从7001获取，因此填写7001的id：
 
-![image-20210725162030478](/covers/java--redis-2--3-3k2g20/image-20210725162030478.png)
+![image-20210725162030478](/covers/java--redis-2--3-3k2g20/image-20210725162030478.webp)
 
 填完后，点击done，这样插槽转移就准备好了：
 
-![image-20210725162101228](/covers/java--redis-2--3-3k2g20/image-20210725162101228.png)
+![image-20210725162101228](/covers/java--redis-2--3-3k2g20/image-20210725162101228.webp)
 
 确认要转移吗？输入yes：
 
 然后，通过命令查看结果：
 
-![image-20210725162145497](/covers/java--redis-2--3-3k2g20/image-20210725162145497.png) 
+![image-20210725162145497](/covers/java--redis-2--3-3k2g20/image-20210725162145497.webp) 
 
 可以看到： 
 
-![image-20210725162224058](/covers/java--redis-2--3-3k2g20/image-20210725162224058.png)
+![image-20210725162224058](/covers/java--redis-2--3-3k2g20/image-20210725162224058.webp)
 
 目的达成。
 
@@ -356,7 +355,7 @@ redis-cli -p 7001 cluster nodes
 
 集群初识状态是这样的：
 
-![image-20210727161152065](/covers/java--redis-2--3-3k2g20/image-20210727161152065.png)
+![image-20210727161152065](/covers/java--redis-2--3-3k2g20/image-20210727161152065.webp)
 
 其中7001、7002、7003都是master，我们计划让7002宕机。
 
@@ -378,15 +377,15 @@ redis-cli -p 7002 shutdown
 
 2）然后是疑似宕机：
 
-![image-20210725162319490](/covers/java--redis-2--3-3k2g20/image-20210725162319490.png)
+![image-20210725162319490](/covers/java--redis-2--3-3k2g20/image-20210725162319490.webp)
 
 3）最后是确定下线，自动提升一个slave为新的master：
 
-![image-20210725162408979](/covers/java--redis-2--3-3k2g20/image-20210725162408979.png)
+![image-20210725162408979](/covers/java--redis-2--3-3k2g20/image-20210725162408979.webp)
 
 4）当7002再次启动，就会变为一个slave节点了：
 
-![image-20210727160803386](/covers/java--redis-2--3-3k2g20/image-20210727160803386.png)
+![image-20210727160803386](/covers/java--redis-2--3-3k2g20/image-20210727160803386.webp)
 
 
 
@@ -394,7 +393,7 @@ redis-cli -p 7002 shutdown
 
 利用cluster failover命令可以手动让集群中的某个master宕机，切换到执行cluster failover命令的这个slave节点，实现无感知的数据迁移。其流程如下：
 
-![image-20210725162441407](/covers/java--redis-2--3-3k2g20/image-20210725162441407.png)
+![image-20210725162441407](/covers/java--redis-2--3-3k2g20/image-20210725162441407.webp)
 
 
 
@@ -416,13 +415,13 @@ redis-cli -p 7002 shutdown
 
 如图：
 
-![image-20210727160037766](/covers/java--redis-2--3-3k2g20/image-20210727160037766.png)
+![image-20210727160037766](/covers/java--redis-2--3-3k2g20/image-20210727160037766.webp)
 
 
 
 效果：
 
-![image-20210727161152065](/covers/java--redis-2--3-3k2g20/image-20210727161152065-1777264798101-416.png)
+![image-20210727161152065](/covers/java--redis-2--3-3k2g20/image-20210727161152065-1777264798101-416.webp)
 
 
 

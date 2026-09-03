@@ -2,7 +2,6 @@
 title: 五.二叉树
 description: 左神算法第5讲笔记：二叉树
 pubDate: 2026-08-30
-tags: [算法]
 series: 左神算法笔记
 order: 5
 source: 算法/5.二叉树.md
@@ -78,7 +77,7 @@ public static void f(Node head) {
 }
 ```
 
-![递归序三时刻](/covers/5-1tghh4d/recursive_order.png)
+![递归序三时刻](/covers/5-1tghh4d/recursive_order.webp)
 
 把"打印"放在三个时刻之一，就得到三种遍历：第一次打印 = **先序**（头左右），第二次 = **中序**（左头右），第三次 = **后序**（左右头）。左神强调：不要背三种遍历的代码，**背递归序，打印位置决定遍历名**。
 
@@ -233,7 +232,7 @@ public static int maxWidth(Node head) {
 - 序列化：先序遍历，空节点记作 `#`，节点间用 `_` 分隔。如 `1_2_#_#_3_#_#`。
 - 反序列化：按 `_` 切开入队列，递归取队头建树，遇 `#` 返回 null。
 
-![先序序列化](/covers/5-1tghh4d/serialize.png)
+![先序序列化](/covers/5-1tghh4d/serialize.webp)
 
 ```java
 // 序列化：先序，空记 #，下划线分隔
@@ -273,7 +272,7 @@ private static Node recon(Queue<String> queue) {
 
 ## 六、四大判定：搜索、完全、满、平衡
 
-![四种树判定对比](/covers/5-1tghh4d/tree_types.png)
+![四种树判定对比](/covers/5-1tghh4d/tree_types.webp)
 
 ### 6.1 搜索二叉树（BST）：中序严格升序
 
@@ -393,7 +392,7 @@ private static InfoBal processBal(Node x) {
 1. **有右子树**：后继 = 右子树的**最左**节点；
 2. **无右子树**：往上爬，直到"当前节点是父节点的左孩子"，那个父就是后继（爬到头都没有则无后继，即它是整棵树中序最后一个）。
 
-![后继节点两种情况](/covers/5-1tghh4d/successor.png)
+![后继节点两种情况](/covers/5-1tghh4d/successor.webp)
 
 ```java
 public static class NodeP {
@@ -428,7 +427,7 @@ public static NodeP getSuccessorNode(NodeP node) {
 
 **可能性分类**：对任意子树 x，最大距离要么**不经过 x**（在左子树内或右子树内），要么**经过 x**（左高 + 右高）。所以向左右子树要两个信息：`maxDistance` 和 `height`。
 
-![最大距离递归信息](/covers/5-1tghh4d/max_distance.png)
+![最大距离递归信息](/covers/5-1tghh4d/max_distance.webp)
 
 ```java
 public static class InfoDist {
@@ -467,7 +466,7 @@ private static InfoDist processDist(Node x) {
 
 信息：`laiMax`（x 来时子树最大快乐）、`buMax`（x 不来时）。
 
-![最大快乐值递归信息](/covers/5-1tghh4d/max_happy.png)
+![最大快乐值递归信息](/covers/5-1tghh4d/max_happy.webp)
 
 ```java
 public static class Emp {

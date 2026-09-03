@@ -2,7 +2,6 @@
 title: 八.Redis持久化
 description: Redis持久化Redis作为一款基于内存的数据库，其最大的优势是极高的读写性能。但这也带来了一个致命问题：一旦服务器宕机或断电，内存中的数据就会全部丢失。为了解决这个问题，Redis提供了持久化机制
 pubDate: 2026-08-23
-tags: [Redis]
 series: Redis
 order: 8
 source: Java后端/数据库/Redis/2.高级/1. 持久化.md
@@ -251,7 +250,7 @@ RDB 是定期给数据拍的一张“照片”，那么 AOF（Append Only File�
 
 在混合持久化模式下，Redis 依然生成的是一个 AOF 文件，但这个文件的内部结构发生了彻底的改变。它不再是纯文本的命令日志，而是变成了 **“前半部分是 RDB 格式的二进制数据，后半部分是 AOF 格式的文本数据”** 的混合体。
 
-![image-20260810212150462](/covers/java--redis-2--1-2ftpd3/image-20260810212150462.png)
+![image-20260810212150462](/covers/java--redis-2--1-2ftpd3/image-20260810212150462.webp)
 
 ### 2. 工作流程
 

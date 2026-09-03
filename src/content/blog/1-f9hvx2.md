@@ -2,7 +2,6 @@
 title: 一.认识复杂度和简单排序算法
 description: 左神算法第1讲笔记：认识复杂度和简单排序算法
 pubDate: 2026-08-30
-tags: [算法]
 series: 左神算法笔记
 order: 1
 source: 算法/1.复杂度和简单排序算法.md
@@ -83,7 +82,7 @@ O(1) < O(logN) < O(N) < O(N·logN) < O(N²) < O(N³) < O(2^N) < O(N!)
 
 下图是增长曲线对比，可以直观感受为什么 O(N²) 和 O(N·logN) 是"天壤之别"：N = 100 万时，N² 是 10¹² 次操作（普通机器要跑几十分钟），N·logN 只有约 2×10⁷ 次（毫秒级）。
 
-![常见时间复杂度增长曲线对比](/covers/1-f9hvx2/complexity_curves.png)
+![常见时间复杂度增长曲线对比](/covers/1-f9hvx2/complexity_curves.webp)
 
 **最坏 vs 平均**：时间复杂度一般指**最坏情况**（保证下界），但有些算法会讨论平均情况（如快速排序平均 O(N·logN)、最坏 O(N²)）。第 1 讲的三个排序里，"是否与数据状况有关"是重点，见后文。
 
@@ -138,7 +137,7 @@ public static void xorSwap(int[] arr, int i, int j) {
 
 **思想**：第 0 轮在 `a[0..N-1]` 全范围找最小值，放到 `a[0]`；第 1 轮在 `a[1..N-1]` 找最小值，放到 `a[1]`……第 i 轮在 `a[i..N-1]` 找最小值放到 `a[i]`。每轮只交换一次。
 
-![选择排序一轮示意](/covers/1-f9hvx2/selection_sort.png)
+![选择排序一轮示意](/covers/1-f9hvx2/selection_sort.webp)
 
 ```java
 public static void selectionSort(int[] arr) {
@@ -170,7 +169,7 @@ public static void selectionSort(int[] arr) {
 
 **思想**：从头到尾两两比较相邻元素，逆序就交换。一轮走完，最大值像气泡一样"浮"到（或者说大数"沉"到）数组末尾；然后范围缩小一位，再来一轮。
 
-![冒泡排序一轮示意](/covers/1-f9hvx2/bubble_sort.png)
+![冒泡排序一轮示意](/covers/1-f9hvx2/bubble_sort.webp)
 
 ```java
 public static void bubbleSort(int[] arr) {
@@ -205,7 +204,7 @@ public static void bubbleSort(int[] arr) {
 
 **思想**：类比**摸扑克牌整理手牌**——每次新摸一张牌，从右往左和手里的牌比较，插到第一个不比它大的牌后面。对应到数组：保证 `a[0..i]` 有序，把新来的 `a[i]` 插入到前面有序区的正确位置。
 
-![插入排序：整理扑克牌](/covers/1-f9hvx2/insertion_sort.png)
+![插入排序：整理扑克牌](/covers/1-f9hvx2/insertion_sort.webp)
 
 ```java
 public static void insertionSort(int[] arr) {
@@ -256,7 +255,7 @@ public static void insertionSort2(int[] arr) {
 
 ### 3.4 三种排序对比
 
-![三种简单排序对比](/covers/1-f9hvx2/sort_compare.png)
+![三种简单排序对比](/covers/1-f9hvx2/sort_compare.webp)
 
 | 排序 | 最好 | 最坏 / 平均 | 空间 | 稳定性 | 与数据状况有关？ | 核心思想 |
 |---|---|---|---|---|---|---|
@@ -283,7 +282,7 @@ public static void insertionSort2(int[] arr) {
 
 跑上几十万组随机数据都一致，你的算法基本就可以信了。以后每次改算法，跑一遍对数器立刻知道改对没有。
 
-![对数器流程](/covers/1-f9hvx2/comparator_flow.png)
+![对数器流程](/covers/1-f9hvx2/comparator_flow.webp)
 
 ### 4.2 完整代码（可直接运行）
 
@@ -375,7 +374,7 @@ public class SortComparator {
 
 最经典的二分：数组有序，找 `target`，返回下标，找不到返回 -1。
 
-![二分查找](/covers/1-f9hvx2/binary_search.png)
+![二分查找](/covers/1-f9hvx2/binary_search.webp)
 
 ```java
 // 有序数组中找 target，返回下标；找不到返回 -1
@@ -439,7 +438,7 @@ public static int mostLeftNoLess(int[] arr, int x) {
 
 给定一个**任意相邻两数都不相等**的数组（注意：**无序**），返回任意一个局部最小的下标。要求比 O(N) 扫一遍更快。
 
-![局部最小值](/covers/1-f9hvx2/local_min.png)
+![局部最小值](/covers/1-f9hvx2/local_min.webp)
 
 **为什么无序也能二分**：看"趋势"。先查边界：
 

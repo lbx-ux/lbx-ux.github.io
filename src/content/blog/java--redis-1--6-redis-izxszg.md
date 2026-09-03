@@ -2,7 +2,6 @@
 title: 七. Lua
 description: Lua是一种轻量小巧的脚本语言，用标准C语言编写并以源代码形式开放，其设计目的是为了嵌入应用程序中，从而为应用程序提供灵活的扩展和定制功能。官网：https://www.lua.org/
 pubDate: 2026-08-23
-tags: [Redis]
 series: Redis
 order: 7
 source: Java后端/数据库/Redis/1.基础/6. Redis分布式锁.md
@@ -18,11 +17,11 @@ Lua 是一种轻量小巧的脚本语言，用标准C语言编写并以源代码
 
 Lua中支持的常见数据类型包括：
 
-![image-20210821091835406](/covers/java--redis-1--6-redis-izxszg/image-20210821091835406.png)
+![image-20210821091835406](/covers/java--redis-1--6-redis-izxszg/image-20210821091835406.webp)
 
 另外，Lua提供了type()函数来判断一个变量的数据类型：
 
-![image-20210821091904332](/covers/java--redis-1--6-redis-izxszg/image-20210821091904332.png)
+![image-20210821091904332](/covers/java--redis-1--6-redis-izxszg/image-20210821091904332.webp)
 
 ### 2. 声明变量
 
@@ -132,7 +131,7 @@ end
 
 与java不同，布尔表达式中的逻辑运算是基于英文单词：
 
-![image-20210821092657918](/covers/java--redis-1--6-redis-izxszg/image-20210821092657918.png)
+![image-20210821092657918](/covers/java--redis-1--6-redis-izxszg/image-20210821092657918.webp)
 
 
 
@@ -224,7 +223,7 @@ return 0
 
 我们的RedisTemplate中，可以利用execute方法去执行lua脚本，参数对应关系就如下图
 
-![1653393304844](/covers/java--redis-1--6-redis-izxszg/1653393304844.png)
+![1653393304844](/covers/java--redis-1--6-redis-izxszg/1653393304844.webp)
 
 ```java
     // Lua 解锁脚本：比较锁的归属 + 删除锁，两步原子执行，防止误删
@@ -294,7 +293,7 @@ SET lock_key unique_value NX PX 10000
 
 线程1现在持有锁之后，在执行业务逻辑过程中，他正准备删除锁，而且已经走到了条件判断的过程中，比如他已经拿到了当前这把锁确实是属于他自己的，正准备删除锁，但是此时他的锁到期了，那么此时线程2进来，但是线程1他会接着往后执行，当他卡顿结束后，他直接就会执行删除锁那行代码，相当于条件判断并没有起到作用，这就是删锁时的原子性问题，之所以有这个问题，是因为线程1的拿锁，比锁，删锁，实际上并不是原子性的，我们要防止刚才的情况发生，
 
-![1653387764938](/covers/java--redis-1--6-redis-izxszg/1653387764938.png)
+![1653387764938](/covers/java--redis-1--6-redis-izxszg/1653387764938.webp)
 
 因此，解锁必须遵循逻辑：**“判断是不是我的锁 -> 如果是，则删除”**。这两个步骤也必须是原子的。我们需要借助 Lua 脚本交给 Redis 执行：
 

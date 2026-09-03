@@ -2,7 +2,6 @@
 title: 十. SQL性能分析
 description: 在MySQL中，分析SQL的执行频率（即各类语句的调用次数与占比）是进行容量规划、架构设计（如读写分离、缓存设计）以及定位系统瓶颈的重要手段。
 pubDate: 2026-08-20
-tags: [MySQL]
 series: MySQL
 order: 10
 source: Java后端/数据库/Mysql/2. 进阶/3.SQL优化.md
@@ -630,12 +629,12 @@ mysql> select count(*) from tb_user;
 
 在InnoDB存储引擎中，表数据都是根据主键顺序组织存放的，这种存储方式的表称为索引组织表(index organized table IOT)。
 
-![image-20260819220115433](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220115433.png)
+![image-20260819220115433](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220115433.webp)
 
 
 行数据，都是存储在聚集索引的叶子节点上的。而我们之前也讲解过InnoDB的逻辑结构图：
 
-![image-20260819220444934](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220444934.png)
+![image-20260819220444934](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220444934.webp)
 
 
 在InnoDB引擎中，数据行是记录在逻辑结构 page 页中的，而每一个页的大小是固定的，默认16K。那也就意味着，一个页中所存储的行也是有限的，如果插入的数据行row在该页存储不小，将会存储到下一个页中，页与页之间会通过指针连接。
@@ -657,21 +656,21 @@ mysql> select count(*) from tb_user;
 
 (1) 从磁盘中申请页, 主键顺序插入
 
-<img src="/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220717599.png" alt="image-20260819220717599" style="zoom:80%;" />
+<img src="/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220717599.webp" alt="image-20260819220717599" style="zoom:80%;" />
 
 (2) 第一个页没有满，继续往第一页插入
 
-![image-20260819220746865](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220746865.png)
+![image-20260819220746865](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220746865.webp)
 
 
 (3) 当第一个也写满之后，再写入第二个页，页与页之间会通过指针连接
 
-![image-20260819220801011](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220801011.png)
+![image-20260819220801011](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220801011.webp)
 
 
 (4) 当第二页写满了, 再往第三页写入
 
-![image-20260819220813944](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220813944.png)
+![image-20260819220813944](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220813944.webp)
 
 
 
@@ -679,34 +678,34 @@ B. 主键乱序插入效果
 
 (1) 加入1, 2页都已经写满了,存放了如图所示的数据
 
-![image-20260819220954357](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220954357.png)
+![image-20260819220954357](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819220954357.webp)
 
 
 (2) 此时再插入id为50的记录，我们来看看会发生什么现象
 
 会再次开启一个页，写入新的页中吗？
 
-![image-20260819221015145](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221015145.png)
+![image-20260819221015145](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221015145.webp)
 
 
 不会。因为，索引结构的叶子节点是有顺序的。按照顺序，应该存储在47之后。
 
-![image-20260819221240686](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221240686.png)
+![image-20260819221240686](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221240686.webp)
 
 
 但是47所在的1页，已经写满了，存储不了50对应的数据了。那么此时会开辟一个新的页3。
 
-![image-20260819221303234](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221303234.png)
+![image-20260819221303234](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221303234.webp)
 
 
 但是并不会直接将50存入3页，而是会将1页后一半的数据，移动到3页，然后在3页，插入50。
 
-![image-20260819221320074](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221320074.png)
+![image-20260819221320074](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221320074.webp)
 
 
 移动数据，并插入id为50的数据之后，那么此时，这三个页之间的数据顺序是有问题的。1的下一个页，应该是3，3的下一个页是2。所以，此时，需要重新设置链表指针。
 
-![image-20260819221348514](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221348514.png)
+![image-20260819221348514](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221348514.webp)
 
 
 上述的这种现象，称之为 "页分裂"，是比较耗费性能的操作。
@@ -717,7 +716,7 @@ B. 主键乱序插入效果
 
 目前表中已有数据的索引结构（叶子节点）如下：
 
-![image-20260819221411669](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221411669.png)
+![image-20260819221411669](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221411669.webp)
 
 
 当我们对已有数据进行删除时，具体的效果如下：
@@ -735,12 +734,12 @@ B. 主键乱序插入效果
 当页中删除的记录达到MERGE_threshold（默认为页的  50% ），InnoDB会开始寻找最靠近的页（前或后）看看是否可以将两个页合并以优化空间使用。
 
 
-![image-20260819221555939](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221555939.png)
+![image-20260819221555939](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221555939.webp)
 
 
 删除数据，并将页合并之后，再次插入新的数据21，则直接插入3页
 
-![image-20260819221610208](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221610208.png)
+![image-20260819221610208](/covers/java--mysql-2--3-sql-1n4kg08/image-20260819221610208.webp)
 
 
 这个里面所发生的合并页的这个现象，就称之为 "页合并"。
@@ -773,14 +772,14 @@ A.执行排序SQL
 explain select id,age,phone from tb_user order by age;
 ```
 
-![image-20260820103236623](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103236623.png)
+![image-20260820103236623](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103236623.webp)
 
 
 ```sql
 explain select id,age,phone from tb_user order by age, phone;
 ```
 
-![image-20260820103320340](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103320340.png)
+![image-20260820103320340](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103320340.webp)
 
 
 由于 age，phone 都没有索引，所以此时再排序时，出现Using filesort，排序性能较低。
@@ -797,13 +796,13 @@ D. 创建索引后, 根据age, phone进行升序排序
 explain select id,age,phone from tb_user order by age;
 ```
 
-![image-20260820103414815](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103414815.png)
+![image-20260820103414815](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103414815.webp)
 
 ```sql
 explain select id,age,phone from tb_user order by age , phone;
 ```
 
-![image-20260820103446684](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103446684.png)
+![image-20260820103446684](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103446684.webp)
 
 
 建立索引之后，再次进行排序查询，就由原来的Using filesort，变为了 Using index，性能就是比较高的了。
@@ -814,7 +813,7 @@ E.创建索引后，根据age，phone进行降序排序
 explain select id,age,phone from tb_user order by age desc , phone desc ;
 ```
 
-![image-20260820103620818](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103620818.png)
+![image-20260820103620818](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103620818.webp)
 
 
 也出现 Using index，但是此时Extra中出现了 Backward index scan，这个代表反向扫描索引，因为在MySQL中我们创建的索引，默认索引的叶子节点是从小到大排序的，而此时我们查询排序时，是从大到小，所以，在扫描时，就是反向扫描，就会出现 Backward index scan。在MySQL8版本中，支持降序索引，我们也可以创建降序索引。
@@ -825,7 +824,7 @@ F. 根据phone, age进行升序排序, phone在前, age在后。
 explain select id,age,phone from tb_user order by phone, age;
 ```
 
-![image-20260820103719014](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103719014.png)
+![image-20260820103719014](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103719014.webp)
 
 
 排序时，也需要满足最左前缀法则，否则也会出现 filesort。因为在创建索引的时候，age是第一个字段，phone是第二个字段，所以排序时，也就该按照这个顺序来，否则就会出现 Using filesort。
@@ -836,7 +835,7 @@ F. 根据age, phone进行降序一个升序, 一个降序
 explain select id,age,phone from tb_user order by age asc , phone desc ;
 ```
 
-![image-20260820103807931](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103807931.png)
+![image-20260820103807931](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103807931.webp)
 
 因为创建索引时，如果未指定顺序，默认都是按照升序排序的，而查询时，一个升序，一个降序，此时就会出现Using filesort。
 
@@ -855,7 +854,7 @@ H. 然后再次执行如下SQL
 explain select id,age,phone from tb_user order by age asc , phone desc ;
 ```
 
-![image-20260820103854441](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103854441.png)
+![image-20260820103854441](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820103854441.webp)
 
 
 升序/降序联合索引结构图示：
@@ -959,7 +958,7 @@ create index idx_user_pro_age_sta on tb_user(profession, age, status);
 explain select profession, count(*) from tb_user group by profession;
 ```
 
-![image-20260820111545263](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820111545263.png)
+![image-20260820111545263](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820111545263.webp)
 
 再执行如下的分组查询SQL，查看执行计划：
 
@@ -972,7 +971,7 @@ explain select profession, count(*) from tb_user  where profession='软件工程
 explain select profession, count(*) from tb_user group by age;
 ```
 
-![image-20260820111641081](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820111641081.png)
+![image-20260820111641081](/covers/java--mysql-2--3-sql-1n4kg08/image-20260820111641081.webp)
 
 我们发现，如果仅仅根据age分组，就会出现 Using temporary；而如果是根据profession, age两个字段同时分组，则不会出现 Using temporary。原因是因为对于分组操作，在联合索引中，也是符合最左前缀法则的。
 

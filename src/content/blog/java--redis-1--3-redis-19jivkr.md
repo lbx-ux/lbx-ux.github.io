@@ -2,7 +2,6 @@
 title: 四.  Key 的设计规范
 description: Key的设计主要围绕可读性、长度控制和生命周期展开。
 pubDate: 2026-08-23
-tags: [Redis]
 series: Redis
 order: 4
 source: Java后端/数据库/Redis/1.基础/3. Redis键值设计.md

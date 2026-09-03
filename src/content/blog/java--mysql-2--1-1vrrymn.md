@@ -2,7 +2,6 @@
 title: 八. MySQL体系结构
 description: 一.MySQL体系结构MySQL采用了非常经典的分层架构设计。这种设计的核心理念是“各司其职，高度解耦”，尤其是它独创的“插件式存储引擎”架构，使得MySQL既能处理高并发的电商交易，也能应对数据仓库
 pubDate: 2026-08-20
-tags: [MySQL]
 series: MySQL
 order: 8
 source: Java后端/数据库/Mysql/2. 进阶/1.存储引擎.md
@@ -14,7 +13,7 @@ MySQL 采用了非常经典的**分层架构设计**。这种设计的核心理�
 
 MySQL 的体系结构可以自上而下划分为**四个核心层次**：
 
-![image-20260818101130530](/covers/java--mysql-2--1-1vrrymn/image-20260818101130530.png)
+![image-20260818101130530](/covers/java--mysql-2--1-1vrrymn/image-20260818101130530.webp)
 
 ## 1. 连接层
 

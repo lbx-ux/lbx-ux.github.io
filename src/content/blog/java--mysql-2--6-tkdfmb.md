@@ -2,7 +2,6 @@
 title: 十三.日志
 description: 维度Binlog（二进制日志）RedoLog（重做日志）UndoLog（回滚日志）所属层级Server层（所有存储引擎通用）InnoDB存储引擎层InnoDB存储引擎层日志类型逻辑日志（记录SQL语句
 pubDate: 2026-08-20
-tags: [MySQL]
 series: MySQL
 order: 13
 source: Java后端/数据库/Mysql/2. 进阶/6.日志.md
@@ -65,7 +64,7 @@ Undo Log（回滚日志）是 MySQL InnoDB 存储引擎层生成的逻辑日志�
 
 Buffer Pool（缓冲池）是 MySQL InnoDB 存储引擎在内存中开辟的一块核心内存区域，旨在**通过内存缓存磁盘数据页，减少磁盘随机 I/O**，以此大幅提升数据库的读写吞吐量。
 
-<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822103832352.png" alt="image-20260822103832352" style="zoom:67%;" />
+<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822103832352.webp" alt="image-20260822103832352" style="zoom:67%;" />
 
 
 
@@ -75,7 +74,7 @@ Buffer Pool（缓冲池）是 MySQL InnoDB 存储引擎在内存中开辟的一�
 
 Buffer Pool 以 **页（Page，默认 16KB）** 为基本单位进行管理，其内部主要包含：
 
-<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822103942205.png" alt="image-20260822103942205" style="zoom:50%;" />
+<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822103942205.webp" alt="image-20260822103942205" style="zoom:50%;" />
 
 - **数据页（Data Pages）与索引页（Index Pages）**：最主要的缓存数据。
 - **Undo 页（Undo Pages）**：事务回滚与 MVCC 所需的历史版本数据。
@@ -85,7 +84,7 @@ Buffer Pool 以 **页（Page，默认 16KB）** 为基本单位进行管理，�
 
 为了更好的管理这些在Buffer Pool中的缓存页，InnoDB为每一个缓存页都创建了一个控制块，控制块的信息包括：缓存页的表空间，页号，缓存页地址，链表节点，控制块也是占用内存空间的，它是放在Buffer Pool的最前面，然后才是缓存页
 
-<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822163530625.png" alt="image-20260822163530625" style="zoom:67%;" />
+<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822163530625.webp" alt="image-20260822163530625" style="zoom:67%;" />
 
 在控制块和缓存页之间的部分就称之为碎片空间
 
@@ -122,7 +121,7 @@ Buffer Pool 以 **页（Page，默认 16KB）** 为基本单位进行管理，�
 
 为了能够快速找到空闲的缓存页，使⽤链表结构，将空闲缓存页的「控制块」作为链表的节点，这个链表称为**Free** 链表（空闲链表）。
 
-<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822164207822.png" alt="image-20260822164207822" style="zoom:67%;" />
+<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822164207822.webp" alt="image-20260822164207822" style="zoom:67%;" />
 
 Free 链表上除了有控制块，还有⼀个头节点，该头节点包含链表的头节点地址，尾节点地址，以及当前链表中节点的数量等信息。
 
@@ -140,7 +139,7 @@ Free 链表节点是⼀个⼀个的控制块，⽽每个控制块包含着对应
 
 有了 Flush 链表后，后台线程就可以遍历 Flush 链表，将脏页写⼊到磁盘。
 
-<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822164555634.png" alt="image-20260822164555634" style="zoom:67%;" />
+<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822164555634.webp" alt="image-20260822164555634" style="zoom:67%;" />
 
 
 
@@ -152,7 +151,7 @@ Buffer Pool  的⼤⼩是有限的，对于⼀些频繁访问的数据我们希�
 
 传统的朴素 LRU 算法在面对**全表扫描**或预读（Read-Ahead）时，会瞬间把真正的高频热点数据冲刷出内存。InnoDB 采用了分段式改良 LRU：
 
-<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822164850931.png" alt="image-20260822164850931" style="zoom:80%;" />
+<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822164850931.webp" alt="image-20260822164850931" style="zoom:80%;" />
 
 - **分区结构**：将 LRU 链表按比例分为 **Young 区（热数据区，约 63%）** 和 **Old 区（冷数据区，约 37%）**。
 - **插入位置**：新从磁盘读取的数据页默认插入 **Old 区的头部**（即 Midpoint 点），而不是整个链表的最前端。
@@ -217,7 +216,7 @@ InnoDB 的更新操作采⽤的是 Write Ahead Log 策略，即先写⽇志，�
 
 **WAL（预写式日志）** 技术指的是， **MySQL** 的写操作并不是⽴刻写到磁盘上，⽽是先写⽇志，然后在合适的时间再写到磁盘上。
 
-<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822110856731.png" alt="image-20260822110856731" style="zoom:67%;" />
+<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822110856731.webp" alt="image-20260822110856731" style="zoom:67%;" />
 
 直接将内存中修改过的脏页随机写入磁盘（Random I/O）性能极低。InnoDB 采用 **WAL（Write-Ahead Logging）** 机制优化写入性能：
 
@@ -249,7 +248,7 @@ redo log 是物理⽇志，记录了某个数据页做了什么修改，⽐如�
 
 事务提交之后发⽣了崩溃（这⾥的崩溃是宕机崩溃），重启后会通过 redo log 恢复事务，如下图：
 
-<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822170426023.png" alt="image-20260822170426023" style="zoom:67%;" />
+<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822170426023.webp" alt="image-20260822170426023" style="zoom:67%;" />
 
 所以有了 redo log，再通过 WAL 技术，InnoDB 就可以保证即使数据库发⽣异常重启，之前已提交的记录都不会丢失，这个能⼒称为**crash-safe**（崩溃恢复）。可以看出来，**redo log** 保证了事务四⼤特性中的持久性。
 
@@ -279,7 +278,7 @@ Redo Log 是一种 **物理逻辑 (Physical-Logical) 日志**，这比纯粹的�
 
 Redo Log 在写入磁盘前会暂存于内存中的 `Redo Log Buffer`。该参数控制何时将 Buffer 中的日志刷入磁盘：
 
-![image-20260822171532991](/covers/java--mysql-2--6-tkdfmb/image-20260822171532991.png)
+![image-20260822171532991](/covers/java--mysql-2--6-tkdfmb/image-20260822171532991.webp)
 
 - **`0`**：事务提交时不主动刷盘；由后台主线程每秒将 Redo Log Buffer 写入操作系统缓存（OS Page Cache）并执行 `fsync` 落盘（性能最高，MySQL 进程崩溃最多丢失 1 秒数据）。
 - **`1`（默认/推荐）**：每次事务提交都必须将 Redo Log Buffer 写入 OS Cache 并立即执行 `fsync` 刷盘（保证强持久性，安全性最高，但 I/O 成本最高）。
@@ -308,7 +307,7 @@ InnoDB 通过两个全局指针来管理这个循环缓冲区：
 - **`write pos` (写入点)**：当前 Redo Log 写入的位置。随着事务不断提交，`write pos` 会不断向后推进（追加写入）。
 - **`checkpoint` (检查点)**：当前可以覆盖（即已刷盘）的位置。表示 `checkpoint` 之前的所有数据页修改，都已经被安全地写入了磁盘上的数据文件。
 
-<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822172116352.png" alt="image-20260822172116352" style="zoom:67%;" />
+<img src="/covers/java--mysql-2--6-tkdfmb/image-20260822172116352.webp" alt="image-20260822172116352" style="zoom:67%;" />
 
 - write pos 和 checkpoint 的移动都是顺时针⽅向；
 - write pos ～ checkpoint 之间的部分（图中的红⾊部分），⽤来记录新的更新操作；
@@ -402,7 +401,7 @@ Binlog（Binary Log，二进制日志）是 MySQL Server 层维护的逻辑日�
 3. **Commit 阶段（Redo Log 提交）**：
    - Binlog 写入成功后，Redo Log 的状态从 `PREPARE` 改为 **`COMMIT`**，事务正式提交成功。
 
-<img src="/covers/java--mysql-2--6-tkdfmb/image-20260823105440413.png" alt="image-20260823105440413" style="zoom:67%;" />
+<img src="/covers/java--mysql-2--6-tkdfmb/image-20260823105440413.webp" alt="image-20260823105440413" style="zoom:67%;" />
 
 **崩溃恢复的“裁判逻辑”**：
 假设主库在第2步和第3步之间突然宕机，此时 Redo Log 状态是 `PREPARE`，但 Binlog 可能已写或未写。重启恢复时，InnoDB 会做如下“绝对理性”的判断：

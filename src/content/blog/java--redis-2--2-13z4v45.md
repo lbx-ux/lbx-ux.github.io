@@ -2,7 +2,6 @@
 title: 九. Redis主从架构
 description: 一.Redis主从架构Redis的主从复制（MasterSlave/MasterReplica）是Redis实现高可用架构的最基本方式。它的核心思想很简单：一台主节点负责写数据，一台或多台从节点负责读
 pubDate: 2026-08-23
-tags: [Redis]
 series: Redis
 order: 9
 source: Java后端/数据库/Redis/2.高级/2. 主从同步与哨兵.md
@@ -12,7 +11,7 @@ source: Java后端/数据库/Redis/2.高级/2. 主从同步与哨兵.md
 
 Redis 的主从复制（Master-Slave / Master-Replica）是 Redis 实现高可用架构的最基本方式。它的核心思想很简单：**一台主节点负责写数据，一台或多台从节点负责读数据，主节点会将数据单向实时同步给从节点。**
 
-<img src="/covers/java--redis-2--2-13z4v45/image-20260811153332803.png" alt="image-20260811153332803" style="zoom:80%;" />
+<img src="/covers/java--redis-2--2-13z4v45/image-20260811153332803.webp" alt="image-20260811153332803" style="zoom:80%;" />
 
 **主从架构的主要作用**：
 
@@ -62,7 +61,7 @@ Redis 主从节点之间的数据同步主要分为两种场景：**全量复制
 
 你可以把全量复制理解为一次“彻底的拜师学艺”，从节点需要完全清空自己的记忆，把主节点当前的全部功力（数据）完整拷贝一份。
 
-<img src="/covers/java--redis-2--2-13z4v45/image-20260811154225037.png" alt="image-20260811154225037" style="zoom:80%;" />
+<img src="/covers/java--redis-2--2-13z4v45/image-20260811154225037.webp" alt="image-20260811154225037" style="zoom:80%;" />
 
 全量复制是一个严格按顺序执行的网络交互与底层数据处理过程：
 
@@ -126,7 +125,7 @@ Redis 主从节点之间的数据同步主要分为两种场景：**全量复制
 
 假设主从集群正在正常运行，突然发生了网络抖动，从节点掉线了几十秒。以下是它重连后的完整动作：
 
-<img src="/covers/java--redis-2--2-13z4v45/image-20260811155912659.png" alt="image-20260811155912659" style="zoom:80%;" />
+<img src="/covers/java--redis-2--2-13z4v45/image-20260811155912659.webp" alt="image-20260811155912659" style="zoom:80%;" />
 
 1. **发起续传请求：**
 
@@ -182,7 +181,7 @@ Redis 主从节点之间的数据同步主要分为两种场景：**全量复制
 
 主从从架构图：
 
-![image-20210725154405899](/covers/java--redis-2--2-13z4v45/image-20210725154405899.png)
+![image-20210725154405899](/covers/java--redis-2--2-13z4v45/image-20210725154405899.webp)
 
 
 

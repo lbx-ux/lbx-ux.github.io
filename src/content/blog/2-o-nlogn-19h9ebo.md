@@ -2,7 +2,6 @@
 title: 二.认识 O(N log N) 的排序
 description: 左神算法第2讲笔记：认识O(NlogN)的排序
 pubDate: 2026-08-30
-tags: [算法]
 series: 左神算法笔记
 order: 2
 source: 算法/2.O(NlogN)的排序.md
@@ -59,11 +58,11 @@ source: 算法/2.O(NlogN)的排序.md
 
 把数组从中间拆成两半，**先让左右各自有序**（递归），再把两个有序数组合并成一个有序数组（merge）。递归到底（单个元素天然有序）后，merge 一路向上，整体就有序了。
 
-![归并递归树](/covers/2-o-nlogn-19h9ebo/merge_tree.png)
+![归并递归树](/covers/2-o-nlogn-19h9ebo/merge_tree.webp)
 
 merge 是整个算法的核心：两个有序数组，各拿一个指针，谁小谁先放入辅助数组，某边走完就把另一边剩余整体拷入。
 
-![merge 双指针过程](/covers/2-o-nlogn-19h9ebo/merge_process.png)
+![merge 双指针过程](/covers/2-o-nlogn-19h9ebo/merge_process.webp)
 
 ### 2.2 递归版代码
 
@@ -166,7 +165,7 @@ public static void mergeSort2(int[] arr) {
 
 **定义**：一个数组的小和 = 每个元素**左边**所有比它小的数之和，再全部加起来。例：`[1,3,2,4]` 的小和 = 0 + 1 + 1 + (1+3+2) = **8**。
 
-![小和问题示意](/covers/2-o-nlogn-19h9ebo/small_sum.png)
+![小和问题示意](/covers/2-o-nlogn-19h9ebo/small_sum.webp)
 
 暴力是 O(N²)。归并思路：**换个角度数**——不看"谁左边有谁"，看"每个数作为较小值，被右边多少个数计入"。在 merge 时，左半的 `arr[p1]` 若小于右半的 `arr[p2]`，由于右半有序，`arr[p2..R]` 全都比 `arr[p1]` 大，即 `arr[p1]` 一次性被右边 `(R - p2 + 1)` 个数计入：
 
@@ -235,7 +234,7 @@ private static int merge(int[] arr, int l, int mid, int r) {
 1. **随机选 pivot**：`swap(arr, L + random(R-L+1), R)`，把随机位置的数换到末尾当 pivot。pivot 偏不偏交给运气，**期望**复杂度 O(N log N)（数学上可以证明期望与数据状况无关）。
 2. **荷兰国旗 partition**：一次扫描切成 `<`、`=`、`>` 三区，`=` 区直接归位。
 
-![荷兰国旗三区](/covers/2-o-nlogn-19h9ebo/dutch_flag.png)
+![荷兰国旗三区](/covers/2-o-nlogn-19h9ebo/dutch_flag.webp)
 
 荷兰国旗规则（pivot = `arr[R]`，`more` 初始指向 R 保护 pivot 不被动）：
 
@@ -313,7 +312,7 @@ public static void swap(int[] arr, int i, int j) {
 孩子 c →  父 (c-1)/2      （整数除法）
 ```
 
-![堆结构](/covers/2-o-nlogn-19h9ebo/heap_structure.png)
+![堆结构](/covers/2-o-nlogn-19h9ebo/heap_structure.webp)
 
 堆只保证"父子"有序，不保证"兄弟"有序——它是"部分有序"结构，所以建堆 O(N)、取最大 O(1)、调整 O(log N)。
 
@@ -323,7 +322,7 @@ public static void swap(int[] arr, int i, int j) {
 
 **heapify（下沉）**：堆顶被换走后，新顶与两个孩子比，比**较大的孩子**小就交换，一路向下，直到不违反堆性质。
 
-![heapInsert 与 heapify](/covers/2-o-nlogn-19h9ebo/heap_ops.png)
+![heapInsert 与 heapify](/covers/2-o-nlogn-19h9ebo/heap_ops.webp)
 
 ```java
 // 新来的数在 index 位置，向上调整成大根堆
@@ -387,7 +386,7 @@ public static void heapSort(int[] arr) {
 
 ## 六、排序算法大总结
 
-![三大 NlogN 排序对比](/covers/2-o-nlogn-19h9ebo/nlogn_compare.png)
+![三大 NlogN 排序对比](/covers/2-o-nlogn-19h9ebo/nlogn_compare.webp)
 
 把第 1、2 讲合在一起的完整对比表：
 

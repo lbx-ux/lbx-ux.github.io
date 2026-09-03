@@ -2,7 +2,6 @@
 title: 十一.事务
 description: MySQL中的事务是将一组SQL语句作为一个不可分割的逻辑单元执行，仅在InnoDB引擎中被完整支持。
 pubDate: 2026-08-20
-tags: [MySQL]
 series: MySQL
 order: 11
 source: Java后端/数据库/Mysql/2. 进阶/4.事务.md
@@ -50,7 +49,7 @@ ROLLBACK;
 - **场景**：事务 A 将余额从 100 改为 200（未提交）；事务 B 读取到 200 并据此结算；随后事务 A 发生异常回滚（余额恢复为 100）。
 - **后果**：事务 B 基于实际上从未真正生效的“脏数据”完成了业务处理。
 
-![image-20260820182004022](/covers/java--mysql-2--4-tk841l/image-20260820182004022.png)
+![image-20260820182004022](/covers/java--mysql-2--4-tk841l/image-20260820182004022.webp)
 
 
 
@@ -60,7 +59,7 @@ ROLLBACK;
 - **场景**：事务 A 第一次查询商品库存为 100；事务 B 将库存修改为 200 并提交；事务 A 再次读取该商品库存，得到 200。
 - **后果**：违背了事务内部的数据一致性预期，侧重于已有记录的 **UPDATE** 或 **DELETE**。
 
-![image-20260820182155443](/covers/java--mysql-2--4-tk841l/image-20260820182155443.png)
+![image-20260820182155443](/covers/java--mysql-2--4-tk841l/image-20260820182155443.webp)
 
 
 
@@ -70,7 +69,7 @@ ROLLBACK;
 - **场景**：事务 A 查询 `age > 18` 的用户共有 5 条；事务 B 插入了一条 `age = 20` 的新记录并提交；事务 A 再次查询（或执行批量更新），发现变成了 6 条记录。
 - **后果**：前后产生如同“幻觉”般凭空出现的新行，侧重于范围内的 **INSERT**。
 
-![image-20260820182310445](/covers/java--mysql-2--4-tk841l/image-20260820182310445.png)
+![image-20260820182310445](/covers/java--mysql-2--4-tk841l/image-20260820182310445.webp)
 
 
 
@@ -134,11 +133,11 @@ SQL 标准定义了四种事务隔离级别，由低到高依次强化隔离程�
 
 那具体怎么做到的呢？我们重点看事务 B 每次读取数据时创建的  Read View。前两次事务 B 读取数据时创建的Read View 如下图：
 
-<img src="/covers/java--mysql-2--4-tk841l/image-20260820201356926.png" alt="image-20260820201356926" style="zoom:67%;" />
+<img src="/covers/java--mysql-2--4-tk841l/image-20260820201356926.webp" alt="image-20260820201356926" style="zoom:67%;" />
 
-<img src="/covers/java--mysql-2--4-tk841l/image-20260820201407183.png" alt="image-20260820201407183" style="zoom:50%;" />
+<img src="/covers/java--mysql-2--4-tk841l/image-20260820201407183.webp" alt="image-20260820201407183" style="zoom:50%;" />
 
-<img src="/covers/java--mysql-2--4-tk841l/image-20260820201428585.png" alt="image-20260820201428585" style="zoom:50%;" />
+<img src="/covers/java--mysql-2--4-tk841l/image-20260820201428585.webp" alt="image-20260820201428585" style="zoom:50%;" />
 
 我们来分析下为什么事务 B 第⼆次读数据时，读不到事务 A（还未提交事务）修改的数据？
 
@@ -150,7 +149,7 @@ SQL 标准定义了四种事务隔离级别，由低到高依次强化隔离程�
 
 在事务 A提交后，由于隔离级别是「读提交」，所以事务 **B** 在每次读数据的时候，会重新创建  **Read View**，此时事务 B 第三次读取数据时创建的  Read View 如下：
 
-<img src="/covers/java--mysql-2--4-tk841l/image-20260820201723928.png" alt="image-20260820201723928" style="zoom:67%;" />
+<img src="/covers/java--mysql-2--4-tk841l/image-20260820201723928.webp" alt="image-20260820201723928" style="zoom:67%;" />
 
 事务 B 在找到⼩林这条记录时，会发现这条记录的 **trx_id** 是 **51**，⽐事务 **B** 的 **Read View** 中的 **min_trx_id** 值（**52**）还⼩，这意味着修改这条记录的事务早就在创建  **Read View** 前提交过了，所以该版本的记录对事务 **B** 是可见的。
 
@@ -180,7 +179,7 @@ SQL 标准定义了四种事务隔离级别，由低到高依次强化隔离程�
 
 假设事务 A（事务 id 为51）启动后，紧接着事务 B （事务 id 为52）也启动了，那这两个事务创建的 Read View 如下：
 
-<img src="/covers/java--mysql-2--4-tk841l/image-20260820200622742.png" alt="image-20260820200622742" style="zoom: 80%;" />
+<img src="/covers/java--mysql-2--4-tk841l/image-20260820200622742.webp" alt="image-20260820200622742" style="zoom: 80%;" />
 
 事务 A和事务 B 的 Read View 具体内容如下：
 
@@ -201,7 +200,7 @@ SQL 标准定义了四种事务隔离级别，由低到高依次强化隔离程�
 
 接着，事务 A通过 update 语句将这条记录修改了（还未提交事务），将⼩林的余额改成 200 万，这时 MySQL 会记录相应的 undo log，并以链表的⽅式串联起来，形成版本链，如下图：
 
-<img src="/covers/java--mysql-2--4-tk841l/image-20260820201034352.png" alt="image-20260820201034352" style="zoom:67%;" />
+<img src="/covers/java--mysql-2--4-tk841l/image-20260820201034352.webp" alt="image-20260820201034352" style="zoom:67%;" />
 
 由于事务 A修改了该记录，以前的记录就变成旧版本记录了，于是最新记录和旧版本记录通过链表的⽅式串起来，⽽且最新记录的 trx_id 是事务 A的事务 id（trx_id = 51）。
 
@@ -393,7 +392,7 @@ InnoDB 为每行记录隐式添加了核心字段：
 
 事务在执行**快照读**时会生成一个 Read View，用于判断版本链中哪些数据对当前事务可见。Read View 包含 4 个核心属性：
 
-<img src="/covers/java--mysql-2--4-tk841l/image-20260820192350172.png" alt="image-20260820192350172" style="zoom:67%;" />
+<img src="/covers/java--mysql-2--4-tk841l/image-20260820192350172.webp" alt="image-20260820192350172" style="zoom:67%;" />
 
 - `creator_trx_id`：创建该 Read View 的事务 ID。
 - `m_ids`：生成视图瞬间，系统中所有**活跃（已开启但未提交）的事务 ID 列表**。
@@ -406,7 +405,7 @@ InnoDB 为每行记录隐式添加了核心字段：
 
 假设在账户余额表插⼊⼀条⼩林余额为 100 万的记录，然后我把这两个隐藏列也画出来，该记录的整个⽰意图如下：
 
-<img src="/covers/java--mysql-2--4-tk841l/image-20260820193519958.png" alt="image-20260820193519958" style="zoom: 80%;" />
+<img src="/covers/java--mysql-2--4-tk841l/image-20260820193519958.webp" alt="image-20260820193519958" style="zoom: 80%;" />
 
 对于使⽤ InnoDB 存储引擎的数据库表，它的聚簇索引记录中都包含下⾯两个隐藏列：
 
@@ -415,7 +414,7 @@ InnoDB 为每行记录隐式添加了核心字段：
 
 在创建  Read View 后，我们可以将记录中的 trx_id 划分这三种情况：
 
-<img src="/covers/java--mysql-2--4-tk841l/image-20260820193717405.png" alt="image-20260820193717405" style="zoom: 80%;" />
+<img src="/covers/java--mysql-2--4-tk841l/image-20260820193717405.webp" alt="image-20260820193717405" style="zoom: 80%;" />
 
 ⼀个事务去访问记录的时候，除了⾃⼰的更新记录总是可见之外，还有这⼏种情况：
 
