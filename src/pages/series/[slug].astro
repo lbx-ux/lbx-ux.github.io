@@ -1,5 +1,5 @@
 ---
-import { getPublishedPosts, formatDate } from '@/lib/content';
+import { getPublishedPosts } from '@/lib/content';
 import { estimateReadingTime, formatReadingTime } from '@/lib/readingTime';
 import { buildSeriesMap } from '@/lib/series';
 import BaseLayout from '@/layouts/BaseLayout.astro';
@@ -25,7 +25,7 @@ const totalMinutes = group.posts.reduce((sum, p) => sum + (p.readingMinutes || 0
       <p class="sd-eyebrow"><Icon name="layers" size={15} /> 专栏</p>
       <h1 class="sd-title">{group.name}</h1>
       <p class="sd-meta">
-        共 {group.posts.length} 篇 · 总阅读约 {formatReadingTime(totalMinutes)} · 更新于 {formatDate(group.lastUpdated)}
+        共 {group.posts.length} 篇 · 总阅读 {formatReadingTime(totalMinutes)}
       </p>
     </header>
 
@@ -39,7 +39,6 @@ const totalMinutes = group.posts.reduce((sum, p) => sum + (p.readingMinutes || 0
               <p class="sd-desc">{p.data.description}</p>
             </div>
             <div class="sd-side">
-              <time datetime={p.data.pubDate.toISOString()}>{formatDate(p.data.pubDate)}</time>
               <span>{formatReadingTime(p.readingMinutes)}</span>
             </div>
           </li>

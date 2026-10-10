@@ -115,6 +115,22 @@ export function deriveOrder(rel, series, cfg = loadConfig()) {
 }
 
 /* ── 语法转换 ─────────────────────────────────────────── */
+/**
+ * 输出 YAML 双引号标量。
+ * title / description 直接来自笔记，可能以 YAML 保留字符开头（@ ` ! & % * 等），
+ * 或含 ": " 与 #，裸写会让整个 frontmatter 解析失败、全站构建中断，故一律加引号转义。
+ */
+export function yamlStr(v) {
+  const escaped = String(v ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\r/g, '\\r')
+    .replace(/\n/g, '\\n')
+    .replace(/\t/g, '\\t')
+    .replace(/[\x00-\x1f]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
+  return `"${escaped}"`;
+}
+
 export function parseFrontmatter(content) {
   const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n(\r?\n)?/);
   if (!m) return { meta: {}, body: content };
@@ -291,14 +307,14 @@ export function buildPostFromRaw({ rel, raw, images, overrides = {}, cfg = loadC
 
   const frontmatterLines = [
     '---',
-    `title: ${title}`,
-    `description: ${description}`,
+    `title: ${yamlStr(title)}`,
+    `description: ${yamlStr(description)}`,
     `pubDate: ${pubDate}`,
-    ...(series ? [`series: ${series}`] : []),
+    ...(series ? [`series: ${yamlStr(series)}`] : []),
     // 专栏内序号（主页与专栏页按 专栏顺序 → order 排）
     ...(order != null ? [`order: ${order}`] : []),
     ...(draft ? ['draft: true'] : []),
-    `source: ${rel}`,
+    `source: ${yamlStr(rel)}`,
     '---',
   ];
 
@@ -511,13 +527,13 @@ export function updatePostMeta(slug, patch, cfg = loadConfig()) {
 
   const frontmatterLines = [
     '---',
-    `title: ${title}`,
-    ...(description ? [`description: ${description}`] : []),
+    `title: ${yamlStr(title)}`,
+    ...(description ? [`description: ${yamlStr(description)}`] : []),
     ...(pubDate ? [`pubDate: ${pubDate}`] : []),
-    ...(series ? [`series: ${series}`] : []),
+    ...(series ? [`series: ${yamlStr(series)}`] : []),
     ...(order != null ? [`order: ${order}`] : []),
     ...(draft ? ['draft: true'] : []),
-    ...(meta.source ? [`source: ${meta.source}`] : []),
+    ...(meta.source ? [`source: ${yamlStr(meta.source)}`] : []),
     '---',
   ];
   fs.writeFileSync(file, frontmatterLines.join('\n') + '\n\n' + (typeof patch.body === 'string' ? patch.body : body.replace(/^\r?\n\r?\n/, '')), 'utf-8');

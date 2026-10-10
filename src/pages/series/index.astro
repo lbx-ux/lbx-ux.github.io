@@ -4,7 +4,6 @@ import { estimateReadingTime } from '@/lib/readingTime';
 import { buildSeriesMap, type SeriesGroup } from '@/lib/series';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Icon from '@/components/Icon.astro';
-import { formatDate } from '@/lib/content';
 
 const posts = (await getPublishedPosts()).map((p) => ({
   ...p,
@@ -46,7 +45,6 @@ const seriesList: (SeriesGroup & { readingMinutes: number })[] = buildSeriesMap(
             {s.posts.length > 3 && <p class="sc-more">… 共 {s.posts.length} 篇</p>}
             <div class="sc-foot">
               <span><Icon name="clock" size={14} /> 约 {Math.round(s.readingMinutes / 5) * 5} 分钟</span>
-              <span>更新于 {formatDate(s.lastUpdated)}</span>
             </div>
           </a>
         ))

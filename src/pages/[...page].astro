@@ -1,5 +1,5 @@
 ---
-import { getPublishedPosts, formatDate } from '@/lib/content';
+import { getPublishedPosts } from '@/lib/content';
 import { estimateReadingTime } from '@/lib/readingTime';
 import { buildSeriesMap } from '@/lib/series';
 import PostCard from '@/components/PostCard.astro';
@@ -100,8 +100,7 @@ const homeSeries = allSeries.slice(0, 4);
                   <span class="hs-count">{s.posts.length} 篇</span>
                 </div>
                 <h3 class="hs-name">{s.name}</h3>
-                <p class="hs-latest">最近：{s.posts[0].data.title}</p>
-                <span class="hs-date">{formatDate(s.lastUpdated)}</span>
+                <p class="hs-latest">首篇：{s.posts[0].data.title}</p>
               </a>
             ))
           }
@@ -310,11 +309,6 @@ const homeSeries = allSeries.slice(0, 4);
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-  }
-  .hs-date {
-    font-size: 0.75rem;
-    color: var(--fg-faint);
-    font-family: var(--font-mono);
   }
 
   @media (max-width: 1023px) {
