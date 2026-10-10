@@ -259,8 +259,9 @@
       }
       postList.innerHTML = posts
         .map(
-          (p) => `
-        <div class="item" role="listitem" data-slug="${esc(p.slug)}">
+          (p, i) => `
+        <div class="item post-item" role="listitem" data-slug="${esc(p.slug)}">
+          <span class="pos-num" title="主页展示位置">${i + 1}</span>
           <div class="drag-handle" draggable="true" title="拖动调整顺序" aria-label="拖动调整顺序">
             <svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="5" r="1.7"/><circle cx="15" cy="5" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="19" r="1.7"/><circle cx="15" cy="19" r="1.7"/></svg>
           </div>
@@ -268,7 +269,7 @@
             <div class="item-title">
               ${p.draft ? '<span class="draft-badge">草稿</span>' : ''}${esc(p.title)}
             </div>
-            <div class="item-sub">${esc(p.description || '')}</div>
+            <div class="item-sub item-desc">${esc(p.description || '')}</div>
             <div class="item-sub">
               ${p.series ? `<span class="tag series-tag">${esc(p.series)}${p.order != null ? ` · ${esc(String(p.order))}` : ''}</span>` : ''}
             </div>

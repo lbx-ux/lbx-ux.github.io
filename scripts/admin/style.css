@@ -147,7 +147,7 @@ input { font: inherit; color: inherit; }
 
 /* 列表 */
 .note-list, .post-list {
-  display: flex; flex-direction: column; gap: 6px;
+  display: flex; flex-direction: column; gap: 10px;
   max-height: calc(100vh - 220px); overflow-y: auto;
   padding-right: 4px;
 }
@@ -200,25 +200,47 @@ input { font: inherit; color: inherit; }
   color: var(--fg);
 }
 
+/* 卡片化列表项（已发布 / 已选文件共用） */
 .item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 14px; border-radius: 14px;
-  border: 1px solid transparent;
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--glass-bg);
   transition: background var(--tr-fast), border-color var(--tr-fast);
-  cursor: pointer;
 }
 .item:hover { background: var(--glass-bg-hover); border-color: var(--glass-border); }
 .item-main { flex: 1; min-width: 0; }
 .item-title {
-  font-weight: 600; font-size: 0.9rem;
+  font-weight: 600; font-size: 0.92rem;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.item-desc {
+  color: var(--fg-faint); font-size: 0.78rem; margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .item-sub {
-  color: var(--fg-faint); font-size: 0.78rem; margin-top: 2px;
+  color: var(--fg-faint); font-size: 0.78rem; margin-top: 8px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .item-path { color: var(--fg-faint); font-size: 0.72rem; font-family: ui-monospace, monospace; }
-.item-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.item-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* 主页位置序号 */
+.pos-num {
+  flex-shrink: 0;
+  min-width: 26px; height: 22px;
+  display: inline-grid; place-items: center;
+  padding: 0 6px;
+  border-radius: 7px;
+  background: rgba(129, 140, 248, 0.14);
+  color: var(--accent-strong);
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem; font-weight: 700;
+}
 
 .pub-btn {
   padding: 6px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 600;
