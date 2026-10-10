@@ -53,10 +53,23 @@ function bindMobileNav() {
   );
 }
 
+/* ── 邮箱链接：href 运行时拼装，构建产物里不留明文 mailto:（见 src/lib/mail.ts） ── */
+function bindMailLinks() {
+  for (const a of document.querySelectorAll<HTMLAnchorElement>('a[data-mail-u]')) {
+    const user = a.dataset.mailU;
+    const domain = a.dataset.mailD;
+    if (!user || !domain) continue;
+    a.href = `mailto:${user}@${domain}`;
+    a.removeAttribute('data-mail-u');
+    a.removeAttribute('data-mail-d');
+  }
+}
+
 /* ── 视图过渡生命周期 ── */
 function boot() {
   bindThemeToggle();
   bindMobileNav();
+  bindMailLinks();
   initPageAnimations();
   initLiquidGlass();
 }

@@ -15,9 +15,12 @@ export const POSTS_PER_PAGE = 8;
 
 export const SOCIAL_LINKS = [
   { label: 'GitHub', url: 'https://github.com/lbx-ux', icon: 'github' },
-  { label: 'RSS', url: '/rss.xml', icon: 'rss' },
-  // 想加 Email / X 等更多链接时，在此按 { label, url, icon } 追加即可（icon 取自 src/components/Icon.astro）
+  // 想加 X / 掘金 等更多链接时，在此按 { label, url, icon } 追加即可（icon 取自 src/components/Icon.astro）
+  // 邮箱单独放 EMAIL：分段存放、渲染时拼装，见 src/lib/mail.ts
 ] as const;
+
+/** 联系邮箱。故意拆成两段：构建产物里不出现连续的 user@domain 字串 */
+export const EMAIL = { user: '2953997419', domain: 'qq.com' } as const;
 
 export const NAV_LINKS = [
   { label: '首页', url: '/' },

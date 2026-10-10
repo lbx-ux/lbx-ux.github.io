@@ -1,5 +1,6 @@
 ---
-import { SOCIAL_LINKS } from '@/consts';
+import { SOCIAL_LINKS, EMAIL } from '@/consts';
+import { mailText } from '@/lib/mail';
 import { getPublishedPosts } from '@/lib/content';
 import { estimateReadingTime } from '@/lib/readingTime';
 import { buildSeriesMap, type SeriesGroup } from '@/lib/series';
@@ -146,6 +147,10 @@ const shown = clusters.filter((c) => c.series.length > 0);
               </a>
             ))
           }
+          <a class="contact-link glass-lift" href="#" data-mail-u={EMAIL.user} data-mail-d={EMAIL.domain}>
+            <Icon name="mail" size={16} />
+            <span set:html={mailText()} />
+          </a>
         </div>
       </section>
 

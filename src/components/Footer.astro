@@ -1,5 +1,6 @@
 ---
-import { SITE_TITLE, SITE_AUTHOR, SOCIAL_LINKS } from '@/consts';
+import { SITE_TITLE, SITE_AUTHOR, SOCIAL_LINKS, EMAIL } from '@/consts';
+import { mailText } from '@/lib/mail';
 import Icon from '@/components/Icon.astro';
 const year = new Date().getFullYear();
 ---
@@ -26,6 +27,12 @@ const year = new Date().getFullYear();
           </li>
         ))
       }
+      <li>
+        <a class="footer-link" href="#" data-mail-u={EMAIL.user} data-mail-d={EMAIL.domain}>
+          <Icon name="mail" size={17} />
+          <span set:html={mailText()} />
+        </a>
+      </li>
     </ul>
   </div>
   <p class="footer-fine">
