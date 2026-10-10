@@ -1,12 +1,10 @@
 name: Deploy to GitHub Pages
 
-# ── 部署已冻结（2026-10-10）──
-# 线上站点停留在冻结时的内容，仓库代码照常 push 备份。
-# 恢复自动部署：把 push 触发加回来即可（其余无需改动）。
-#   on:
-#     push:
-#       branches: [main]
+# ── 自动部署已恢复（2026-10-10）──
+# push 到 main 即构建上线；要再次冻结：删掉下面的 push 三行，只留 workflow_dispatch。
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 # 新推送自动取消还在跑的旧部署，避免排队阻塞

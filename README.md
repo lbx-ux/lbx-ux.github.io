@@ -102,8 +102,8 @@ node scripts/admin/server.mjs   # http://127.0.0.1:8799
    ```
 
 4. **开启 Pages**：仓库 **Settings → Pages → Build and deployment → Source** 选 **GitHub Actions**
-5. **部署目前处于冻结状态** ⏸：[.github/workflows/deploy.yml](.github/workflows/deploy.yml) 只保留 `workflow_dispatch` 手动触发，推送到 `main` **不会**自动上线，线上内容可能落后于仓库。要发布：Actions 页选该 workflow → Run workflow。
-   > 恢复自动部署：把 deploy.yml `on:` 里的 `push: branches: [main]` 加回来即可（文件顶部注释里留了原文）。
+5. 推送到 `main` 后，[.github/workflows/deploy.yml](.github/workflows/deploy.yml) 自动构建部署：先跑 `npm run check` 做类型与内容 schema 门禁，再生成 OG 图、构建、发布到 Pages；也可以在 Actions 页手动触发
+   > 想暂停自动上线（例如批量改内容时）：删掉 deploy.yml `on:` 里的 push 三行，只留 `workflow_dispatch`。
 6. 部署完成后访问 `https://<用户名>.github.io/<仓库名>/`
 
 > 🔒 注意：`scripts/admin/` 完全独立于构建产物，不会被部署；`config.json` 已在 `.gitignore` 中排除。
