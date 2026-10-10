@@ -3,7 +3,7 @@ title: 2.MinIo介绍
 description: 一.AWSS3和MinIo
 pubDate: 2026-09-02
 series: 存储技术
-order: 3
+order: 2
 source: 实战/存储技术/2.MinIo介绍.md
 ---
 

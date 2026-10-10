@@ -1,12 +1,17 @@
 [
-  "存储技术",
-  "SpringCloud",
-  "左神算法笔记",
-  "Mybatis",
-  "登录技术",
-  "Spring",
-  "Redis",
   "MySQL",
+  "Redis",
+  "SpringBoot",
+  "SpringCloud",
   "RabbitMQ",
-  "验证码"
+  "Spring",
+  "Java",
+  "Mybatis",
+  "Maven",
+  "部署",
+  "工具",
+  "存储技术",
+  "登录技术",
+  "验证码",
+  "左神算法笔记"
 ]
