@@ -110,7 +110,12 @@ function serveFile(res, filePath) {
     res.writeHead(404).end('Not Found');
     return;
   }
-  res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath)] ?? 'text/plain; charset=utf-8' });
+  res.writeHead(200, {
+    'Content-Type': MIME[path.extname(filePath)] ?? 'text/plain; charset=utf-8',
+    // 后台是本地工具：禁缓存，避免改版后浏览器混用新旧 app.js / style.css（会渲染成空壳）
+    'Cache-Control': 'no-store, must-revalidate',
+    Pragma: 'no-cache',
+  });
   res.end(fs.readFileSync(filePath));
 }
 
