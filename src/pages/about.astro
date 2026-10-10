@@ -1,8 +1,50 @@
 ---
 import { SOCIAL_LINKS } from '@/consts';
+import { getPublishedPosts } from '@/lib/content';
+import { estimateReadingTime } from '@/lib/readingTime';
+import { buildSeriesMap, type SeriesGroup } from '@/lib/series';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Icon from '@/components/Icon.astro';
+
+const posts = (await getPublishedPosts()).map((p) => ({
+  ...p,
+  readingMinutes: estimateReadingTime(p.body ?? ''),
+}));
+const seriesList = buildSeriesMap(posts);
+const totalMinutes = posts.reduce((sum, p) => sum + (p.readingMinutes || 0), 0);
+const totalReadLabel =
+  totalMinutes >= 60 ? `约 ${(totalMinutes / 60).toFixed(0)} 小时` : `约 ${totalMinutes} 分钟`;
+
+/**
+ * 内容版图的主题簇。members 用专栏名（frontmatter 的 series）匹配，
+ * 篇数与链接实时取自内容集合；未归类的专栏自动落进「其他」，不会静默消失。
+ */
+const CLUSTERS: { title: string; note: string; members: string[] }[] = [
+  { title: '数据库与消息', note: '存量、吞吐与一致性', members: ['MySQL', 'Redis', 'Mybatis', 'RabbitMQ'] },
+  { title: '框架与生态', note: 'Spring 全家桶与构建', members: ['SpringBoot', 'SpringCloud', 'Spring', 'Maven'] },
+  { title: 'Java 与算法', note: '语言本质与思维训练', members: ['Java', '左神算法笔记'] },
+  { title: '工程与实战', note: '把服务真正跑起来', members: ['部署', '工具', '登录技术', '验证码', '存储技术'] },
+];
+
+const byName = new Map(seriesList.map((s) => [s.name, s]));
+const clusters = CLUSTERS.map((c) => {
+  const series = c.members.map((m) => byName.get(m)).filter((s): s is SeriesGroup => !!s);
+  return { ...c, series, count: series.reduce((n, s) => n + s.posts.length, 0) };
+});
+const listed = new Set(CLUSTERS.flatMap((c) => c.members));
+const rest = seriesList.filter((s) => !listed.has(s.name));
+if (rest.length) {
+  clusters.push({
+    title: '其他',
+    note: '',
+    members: rest.map((s) => s.name),
+    series: rest,
+    count: rest.reduce((n, s) => n + s.posts.length, 0),
+  });
+}
+const shown = clusters.filter((c) => c.series.length > 0);
 ---
+
 <BaseLayout title="关于" description="关于 lbx：Java 后端开发者，热爱技术、乐于记录与分享。">
   <div class="container about-page">
     <header class="page-head reveal">
@@ -11,22 +53,80 @@ import Icon from '@/components/Icon.astro';
       <p class="page-sub">Java 后端开发 / 技术笔记爱好者 / 长期学习者</p>
     </header>
 
+    <div class="stat-row reveal" role="list" aria-label="站点数据">
+      <div class="stat" role="listitem">
+        <span class="stat-num">{posts.length}</span>
+        <span class="stat-label">篇公开笔记</span>
+      </div>
+      <div class="stat" role="listitem">
+        <span class="stat-num">{seriesList.length}</span>
+        <span class="stat-label">个专栏体系</span>
+      </div>
+      <div class="stat" role="listitem">
+        <span class="stat-num">{totalReadLabel}</span>
+        <span class="stat-label">全部读完</span>
+      </div>
+    </div>
+
     <div class="about-grid">
+      <section class="glass glass-sheen about-card about-card--wide reveal">
+        <h2 class="card-heading">内容版图</h2>
+        <p class="card-note">按主题成体系，点专栏名直达该专栏的目录页。</p>
+        <div class="cm-list">
+          {
+            shown.map((c) => (
+              <div class="cm-cluster">
+                <div class="cm-head">
+                  <h3>{c.title}</h3>
+                  {c.note && <span class="cm-note">{c.note}</span>}
+                  <span class="cm-count">{c.count} 篇</span>
+                </div>
+                <div class="cm-links">
+                  {c.series.map((s) => (
+                    <a class="cm-link" href={`/series/${s.slug}/`}>
+                      {s.name}
+                      <span class="cm-num">{s.posts.length}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </section>
+
       <section class="glass glass-sheen about-card reveal">
         <h2 class="card-heading">关于这个博客</h2>
         <p>
-          这里记录我在 Java 后端路上的学习笔记与实践思考——从基础到框架，从原理到踩坑。
-          写作是我梳理知识的方式——如果某篇文章恰好帮到了你，那便是它额外的幸运。
+          这里是我 Java 后端学习路上的笔记本。它不是零散的转发和摘抄，而是按专栏成体系地组织：
+          从 MySQL、Redis 这些与存量和吞吐有关的问题，到 Spring 全家桶的工程落地，
+          再到部署、工具链、对象存储这些「把 demo 变成能跑的服务」必须面对的杂事。
         </p>
+        <p>
+          写作于我是把知识钉死的方式——一篇讲不清楚的地方，往往就是我自己还没想通的地方。
+          所以这里的文章允许粗糙，但必须是我亲手验证过的。
+        </p>
+        <p>如果某一篇恰好帮你省下了一次踩坑，那便是它额外的幸运。</p>
       </section>
 
       <section class="glass glass-sheen about-card reveal">
         <h2 class="card-heading">我在做的事</h2>
         <ul class="skill-list" role="list">
-          <li><strong>Java 基础与并发</strong> — 集合、JVM、多线程与并发编程，理解语言本质</li>
-          <li><strong>后端框架</strong> — Spring Boot / SpringCloud 微服务，MySQL、Redis 常用组件</li>
-          <li><strong>消息与中间件</strong> — RabbitMQ、Kafka，关注可靠性与最终一致性</li>
-          <li><strong>持续学习</strong> — 算法、系统设计，把学到的写出来才算学会</li>
+          <li>
+            <strong>Java 基础与算法</strong> — 集合、JVM、多线程与并发；算法按左神笔记一讲讲往前推
+          </li>
+          <li>
+            <strong>数据与中间件</strong> — MySQL 索引与事务、Redis 数据结构与缓存、RabbitMQ 可靠性与最终一致性
+          </li>
+          <li>
+            <strong>框架与生态</strong> — SpringBoot / SpringCloud 微服务、Mybatis、Maven 依赖治理
+          </li>
+          <li>
+            <strong>登录与安全</strong> — Session / Token / JWT / OAuth 几种方案对比，验证码与令牌鉴权
+          </li>
+          <li>
+            <strong>工程实践</strong> — 部署、常用工具链、OSS 与 MinIO 对象存储，关注能落地的细节
+          </li>
         </ul>
       </section>
 
@@ -52,8 +152,7 @@ import Icon from '@/components/Icon.astro';
       <section class="glass glass-sheen about-card reveal">
         <h2 class="card-heading">小声明</h2>
         <p>
-          文章内容仅代表个人理解，如有错漏欢迎指正。未经特别说明，本站文章均可转载，
-          请附上原文链接。
+          文章内容仅代表个人理解，如有错漏欢迎指正。未经特别说明，本站文章均可转载，请附上原文链接。
         </p>
       </section>
     </div>
@@ -62,10 +161,10 @@ import Icon from '@/components/Icon.astro';
 
 <style>
   .about-page {
-    max-width: 880px;
+    max-width: 960px;
   }
   .page-head {
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-5);
   }
   .page-eyebrow {
     font-family: var(--font-mono);
@@ -83,20 +182,61 @@ import Icon from '@/components/Icon.astro';
     color: var(--fg-muted);
   }
 
+  /* 数据条：数字实时来自内容集合，文案里不再重复写数字 */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .stat {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 14px 18px;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--card-radius);
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(12px) saturate(1.3);
+    backdrop-filter: blur(12px) saturate(1.3);
+  }
+  .stat-num {
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1;
+    background: linear-gradient(120deg, var(--aurora-3), var(--aurora-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--fg-muted);
+  }
+
   .about-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
+    /* 卡片按内容高度排列，不再被行高拉伸成大片空白 */
+    align-items: start;
   }
   .about-card {
-    padding: 28px 30px;
+    padding: 26px 28px;
   }
-  .about-card:first-child {
+  /* 内容版图信息密度高，独占整行；其余卡片两列按高度配对 */
+  .about-card--wide {
     grid-column: 1 / -1;
   }
   .card-heading {
     font-size: 1.15rem;
-    margin-bottom: 14px;
+    margin: 0 0 12px;
+  }
+  .card-note {
+    margin: -4px 0 16px;
+    font-size: 0.82rem;
+    color: var(--fg-faint);
   }
   .about-card p {
     margin: 0 0 12px;
@@ -104,6 +244,75 @@ import Icon from '@/components/Icon.astro';
   }
   .about-card p:last-child {
     margin-bottom: 0;
+  }
+
+  /* 内容版图 */
+  .cm-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 32px;
+  }
+  .cm-head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .cm-head h3 {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 700;
+  }
+  .cm-note {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.76rem;
+    color: var(--fg-faint);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .cm-count {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--fg-faint);
+    flex-shrink: 0;
+  }
+  .cm-note + .cm-count {
+    margin-left: 0;
+  }
+  .cm-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .cm-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 11px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    font-size: 0.84rem;
+    color: var(--fg-muted);
+    transition: color var(--tr-fast), border-color var(--tr-fast), background var(--tr-fast),
+      transform var(--tr-fast);
+  }
+  .cm-link:hover {
+    color: var(--fg);
+    border-color: rgba(129, 140, 248, 0.45);
+    background: var(--glass-bg-hover);
+    transform: translateY(-1px);
+  }
+  .cm-num {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 0 5px;
+    border-radius: 6px;
+    background: rgba(129, 140, 248, 0.16);
+    color: var(--accent-strong);
   }
 
   .skill-list {
@@ -160,8 +369,13 @@ import Icon from '@/components/Icon.astro';
   }
 
   @media (max-width: 767px) {
-    .about-grid {
+    .about-grid,
+    .stat-row,
+    .cm-list {
       grid-template-columns: 1fr;
+    }
+    .stat {
+      padding: 12px 16px;
     }
   }
 </style>
