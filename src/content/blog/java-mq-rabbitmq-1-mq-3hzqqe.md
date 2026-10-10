@@ -4,6 +4,7 @@ description: 2.RabbitMQRabbitMQ是基于Erlang语言开发的开源消息通信�
 pubDate: 2026-08-17
 series: RabbitMQ
 order: 1
+sort: 48
 source: Java后端/MQ/RabbitMQ/1.MQ基础.md
 ---
 

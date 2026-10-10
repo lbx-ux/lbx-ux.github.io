@@ -186,7 +186,6 @@
     // 预填表单（建议值由 preview 接口回填）
     $('#f-title').value = '';
     $('#f-desc').value = '';
-    $('#f-date').value = new Date().toISOString().slice(0, 10);
     $('#f-series').value = '';
     $('#f-order').value = '';
     $('#f-draft').checked = false;
@@ -225,7 +224,6 @@
     fd.append('description', $('#f-desc').value.trim());
     fd.append('series', $('#f-series').value.trim());
     fd.append('order', $('#f-order').value.trim());
-    fd.append('pubDate', $('#f-date').value);
     fd.append('draft', String($('#f-draft').checked));
     fd.append('note', currentPicked.file, currentPicked.file.name);
     for (const p of pickedFiles) {
@@ -261,8 +259,16 @@
       }
       postList.innerHTML = posts
         .map(
-          (p) => `
+          (p, i) => `
         <div class="item" role="listitem" data-slug="${esc(p.slug)}">
+          <div class="sort-handle" title="上移 / 下移">
+            <button class="sort-btn" data-action="move-up" data-slug="${esc(p.slug)}" data-idx="${i}" aria-label="上移" ${i === 0 ? 'disabled' : ''}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+            </button>
+            <button class="sort-btn" data-action="move-down" data-slug="${esc(p.slug)}" data-idx="${i}" aria-label="下移" ${i === posts.length - 1 ? 'disabled' : ''}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+          </div>
           <div class="item-main">
             <div class="item-title">
               ${p.draft ? '<span class="draft-badge">草稿</span>' : ''}${esc(p.title)}
@@ -270,7 +276,6 @@
             <div class="item-sub">${esc(p.description || '')}</div>
             <div class="item-sub">
               ${p.series ? `<span class="tag series-tag">${esc(p.series)}${p.order != null ? ` · ${esc(String(p.order))}` : ''}</span>` : ''}
-              <span style="margin-left:4px">${esc(p.pubDate)}</span>
             </div>
           </div>
           <div class="item-actions">
@@ -320,6 +325,26 @@
       return;
     }
 
+    if (action === 'move-up' || action === 'move-down') {
+      const idx = Number(btn.dataset.idx);
+      const { posts } = await api('/api/posts');
+      const slugs = posts.map((p) => p.slug);
+      const target = action === 'move-up' ? idx - 1 : idx + 1;
+      if (target < 0 || target >= slugs.length) return;
+      [slugs[idx], slugs[target]] = [slugs[target], slugs[idx]];
+      try {
+        await api('/api/posts/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slugs }),
+        });
+        loadPosts();
+      } catch (err) {
+        toast(err.message, 'err');
+      }
+      return;
+    }
+
     if (action === 'edit') openEdit(slug);
   });
 
@@ -344,7 +369,6 @@
 
     $('#f-title').value = post.title;
     $('#f-desc').value = post.description;
-    $('#f-date').value = post.pubDate;
     $('#f-series').value = post.series || '';
     $('#f-order').value = post.order != null ? String(post.order) : '';
     $('#f-draft').checked = post.draft;
@@ -366,7 +390,6 @@
             description: $('#f-desc').value.trim(),
             series: $('#f-series').value.trim(),
             order: $('#f-order').value.trim(),
-            pubDate: $('#f-date').value,
             draft: $('#f-draft').checked,
             body: editArea.value,
           }),

@@ -287,6 +287,20 @@ export function buildPostFromRaw({ rel, raw, images, overrides = {}, cfg = loadC
       ? Number(overrides.order)
       : deriveOrder(rel, series, cfg);
 
+  // 全局展示序：新文章排到主页最前（比现有最小 sort 再小 1；无 sort 文章时从 0 起）
+  let minSort = null;
+  try {
+    for (const f of fs.readdirSync(path.join(ROOT, cfg.blogDir)).filter((x) => x.endsWith('.md'))) {
+      const { meta } = parseFrontmatter(fs.readFileSync(path.join(ROOT, cfg.blogDir, f), 'utf-8'));
+      if (meta.sort != null && !Number.isNaN(Number(meta.sort))) {
+        minSort = minSort == null ? Number(meta.sort) : Math.min(minSort, Number(meta.sort));
+      }
+    }
+  } catch {
+    /* 目录不存在则从 0 起 */
+  }
+  const sort = minSort == null ? 0 : minSort - 1;
+
   const frontmatterLines = [
     '---',
     `title: ${title}`,
@@ -294,7 +308,8 @@ export function buildPostFromRaw({ rel, raw, images, overrides = {}, cfg = loadC
     `pubDate: ${pubDate}`,
     ...(series ? [`series: ${series}`] : []),
     ...(series && order != null ? [`order: ${order}`] : []),
-    ...(draft ? ['draft: true'] : []),
+    // 全局展示序：主页按它升序；后台手动排序会重写为 0..N-1
+    ...(draft ? ['draft: true'] : [`sort: ${sort}`]),
     `source: ${rel}`,
     '---',
   ];
@@ -412,11 +427,18 @@ export function listPosts(cfg = loadConfig()) {
         pubDate: meta.pubdate ?? '',
         series: meta.series ?? null,
         order: meta.order != null ? Number(meta.order) : null,
+        sort: meta.sort != null && !Number.isNaN(Number(meta.sort)) ? Number(meta.sort) : null,
         draft: meta.draft === 'true',
         source: meta.source ?? null,
       };
     })
-    .sort((a, b) => (b.pubDate || '').localeCompare(a.pubDate || ''));
+    // 后台列表：手动排序（sort 升序在前），无 sort 的按 pubDate 倒序排在后面
+    .sort((a, b) => {
+      if (a.sort != null && b.sort != null) return a.sort - b.sort;
+      if (a.sort != null) return -1;
+      if (b.sort != null) return 1;
+      return (b.pubDate || '').localeCompare(a.pubDate || '');
+    });
 }
 
 /** 读取单篇文章：frontmatter + 正文（编辑弹窗用） */
@@ -458,12 +480,55 @@ export function updatePostMeta(slug, patch, cfg = loadConfig()) {
     ...(pubDate ? [`pubDate: ${pubDate}`] : []),
     ...(series ? [`series: ${series}`] : []),
     ...(series && order != null ? [`order: ${order}`] : []),
+    ...(meta.sort != null ? [`sort: ${meta.sort}`] : []),
     ...(draft ? ['draft: true'] : []),
     ...(meta.source ? [`source: ${meta.source}`] : []),
     '---',
   ];
   fs.writeFileSync(file, frontmatterLines.join('\n') + '\n\n' + (typeof patch.body === 'string' ? patch.body : body.replace(/^\r?\n\r?\n/, '')), 'utf-8');
   return { slug, ok: true };
+}
+
+/**
+ * 后台手动排序：按传入 slug 顺序把所有文章的 sort 重写为 0..N-1。
+ * slugs 数组即前端展示顺序；不在列表中的文章排到最后（保持相对顺序）。
+ */
+export function reorderPosts(slugs, cfg = loadConfig()) {
+  const dir = path.join(ROOT, cfg.blogDir);
+  const list = listPosts(cfg);
+  const rest = list.filter((p) => !slugs.includes(p.slug));
+  const finalOrder = [...slugs, ...rest.map((p) => p.slug)];
+  finalOrder.forEach((slug, i) => {
+    const file = path.join(dir, `${slug}.md`);
+    if (!fs.existsSync(file)) return;
+    const { meta, body } = parseFrontmatter(fs.readFileSync(file, 'utf-8'));
+    const lines = body.startsWith('\n') || body === ''
+      ? [`sort: ${i}`, ...body.split('\n')]
+      : [`sort: ${i}`, '', ...body.split('\n')];
+    fs.writeFileSync(file, frontmatterFrom(meta, i) + '\n\n' + body.replace(/^\r?\n\r?\n/, ''), 'utf-8');
+  });
+  return { ok: true, count: finalOrder.length };
+}
+
+/** 从 meta 对象 + 指定 sort 重建 frontmatter 文本（reorderPosts 用） */
+function frontmatterFrom(meta, sort) {
+  const title = meta.title ?? '';
+  const description = meta.description ?? '';
+  const pubDate = meta.pubdate ?? '';
+  const series = meta.series ?? '';
+  const order = meta.order ?? null;
+  const draft = meta.draft === 'true';
+  return [
+    '---',
+    `title: ${title}`,
+    ...(description ? [`description: ${description}`] : []),
+    ...(pubDate ? [`pubDate: ${pubDate}`] : []),
+    ...(series ? [`series: ${series}`] : []),
+    ...(series && order != null ? [`order: ${order}`] : []),
+    ...(draft ? ['draft: true'] : [`sort: ${sort}`]),
+    ...(meta.source ? [`source: ${meta.source}`] : []),
+    '---',
+  ].join('\n');
 }
 
 export function deletePost(slug, cfg = loadConfig()) {

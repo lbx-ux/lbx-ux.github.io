@@ -4,6 +4,7 @@ description: 顾明思议，网关就是网络的关口。数据在网络间传�
 pubDate: 2026-09-01
 series: SpringCloud
 order: 4
+sort: 4
 source: Java后端/SpringCloud/4.API网关.md
 ---
 

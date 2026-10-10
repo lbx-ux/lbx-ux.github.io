@@ -4,6 +4,7 @@ description: 在Redis7.0及之后版本中，最核心的底层变革是彻底�
 pubDate: 2026-08-23
 series: Redis
 order: 3
+sort: 26
 source: Java后端/数据库/Redis/1.基础/3. 底层数据结构.md
 ---
 

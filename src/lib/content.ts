@@ -6,11 +6,19 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 
 export type Post = CollectionEntry<'blog'> & { readingMinutes: number };
 
-/** 拉取全部已发布文章（排除 draft），按 pubDate 倒序 */
+/** 拉取全部已发布文章（排除 draft）：有 sort 按后台手动排序，否则按 pubDate 倒序 */
 export async function getPublishedPosts(): Promise<Post[]> {
   const posts = await getCollection('blog', ({ data }) => !data.draft);
   return posts
-    .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+    .sort((a, b) => {
+      const sa = a.data.sort;
+      const sb = b.data.sort;
+      // 都有 sort：升序；只有一边有：有 sort 的靠前；都没有：pubDate 倒序兜底
+      if (sa != null && sb != null) return sa - sb;
+      if (sa != null) return -1;
+      if (sb != null) return 1;
+      return b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
+    })
     .map((p) => ({ ...p, readingMinutes: 0 }));
 }
 

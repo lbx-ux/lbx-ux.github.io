@@ -4,6 +4,7 @@ description: 1.StringRedisTemple
 pubDate: 2026-08-23
 series: Redis
 order: 5
+sort: 28
 source: Java后端/数据库/Redis/1.基础/4. RedisTemplate.md
 ---
 

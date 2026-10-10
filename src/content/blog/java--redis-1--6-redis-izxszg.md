@@ -4,6 +4,7 @@ description: Lua是一种轻量小巧的脚本语言，用标准C语言编写并
 pubDate: 2026-08-23
 series: Redis
 order: 7
+sort: 30
 source: Java后端/数据库/Redis/1.基础/6. Redis分布式锁.md
 ---
 

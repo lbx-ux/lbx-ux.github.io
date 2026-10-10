@@ -4,6 +4,7 @@ description: DMLDML英文全称是DataManipulationLanguage(数据操作语言),�
 pubDate: 2026-08-20
 series: MySQL
 order: 3
+sort: 37
 source: Java后端/数据库/Mysql/1. 基础/2.2.DML.md
 ---
 

@@ -4,6 +4,7 @@ description: 一.MySQL体系结构MySQL采用了非常经典的分层架构设�
 pubDate: 2026-08-20
 series: MySQL
 order: 8
+sort: 42
 source: Java后端/数据库/Mysql/2. 进阶/1.存储引擎.md
 ---
 

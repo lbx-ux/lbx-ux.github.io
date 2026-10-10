@@ -4,6 +4,7 @@ description: 一.数据库相关概念数据库、数据库管理系统、SQL名
 pubDate: 2026-08-20
 series: MySQL
 order: 1
+sort: 35
 source: Java后端/数据库/Mysql/1. 基础/1.基础.md
 ---
 

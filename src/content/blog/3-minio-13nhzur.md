@@ -4,6 +4,7 @@ description: xml<dependency<groupIdio.minio</groupId<artifactIdminio</artifactId
 pubDate: 2026-09-02
 series: 存储技术
 order: 3
+sort: 0
 source: 实战/存储技术/3.MinIo.md
 ---
 

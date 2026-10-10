@@ -4,6 +4,7 @@ description: 配置中心到目前为止我们已经解决了微服务相关的�
 pubDate: 2026-09-01
 series: SpringCloud
 order: 5
+sort: 5
 source: Java后端/SpringCloud/5.配置中心.md
 ---
 

@@ -4,6 +4,7 @@ description: 在微服务远程调用的过程中，还存在几个问题需要�
 pubDate: 2026-09-01
 series: SpringCloud
 order: 6
+sort: 6
 source: Java后端/SpringCloud/6.服务容错与降级.md
 ---
 

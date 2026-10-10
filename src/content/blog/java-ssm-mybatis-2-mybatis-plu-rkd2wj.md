@@ -4,6 +4,7 @@ description: MyBatisPlus（简称MP）是MyBatis的增强工具，在MyBatis基�
 pubDate: 2026-08-26
 series: Mybatis
 order: 2
+sort: 15
 source: Java后端/SSM/Mybatis/2.mybatis-plus.md
 ---
 

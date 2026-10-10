@@ -4,6 +4,7 @@ description: DCLDCL英文全称是DataControlLanguage（数据控制语言），
 pubDate: 2026-08-20
 series: MySQL
 order: 5
+sort: 39
 source: Java后端/数据库/Mysql/1. 基础/2.4.DCL.md
 ---
 

@@ -78,15 +78,13 @@
         <label>标题 <input id="f-title" type="text" /></label>
         <label>描述 <input id="f-desc" type="text" placeholder="留空自动提取首段" /></label>
         <div class="meta-row">
-          <label>日期 <input id="f-date" type="date" /></label>
-        </div>
-        <div class="meta-row">
           <label>专栏 <input id="f-series" type="text" placeholder="留空按目录自动推导" /></label>
           <label>专栏序号 <input id="f-order" type="text" placeholder="留空自动推导" /></label>
         </div>
         <label class="draft-check">
           <input id="f-draft" type="checkbox" /> 存为草稿（构建时不会公开）
         </label>
+        <p class="hint">发布后自动排到主页最前，顺序可在「已发布」列表里调整。</p>
       </div>
       <pre id="preview-content" class="preview-content" tabindex="0"></pre>
       <textarea id="edit-content" class="preview-content edit-area" spellcheck="false" hidden></textarea>

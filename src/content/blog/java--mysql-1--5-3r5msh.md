@@ -4,6 +4,7 @@ description: 一.多表关系项目开发中，在进行数据库表结构设计
 pubDate: 2026-08-20
 series: MySQL
 order: 7
+sort: 41
 source: Java后端/数据库/Mysql/1. 基础/5.多表查询.md
 ---
 

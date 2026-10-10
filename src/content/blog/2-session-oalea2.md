@@ -4,6 +4,7 @@ description: 传统单机HttpSession登录状态管理技术解析
 pubDate: 2026-08-25
 series: 登录技术
 order: 3
+sort: 18
 source: 实战/登录技术/2.session.md
 ---
 

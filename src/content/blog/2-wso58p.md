@@ -4,8 +4,10 @@ description: 一.短信认证服务概述短信认证服务是阿里云为个人
 pubDate: 2026-07-01
 series: 验证码
 order: 2
+sort: 53
 source: 实战/验证码/2.短信验证码.md
 ---
+
 
 ## **一.短信认证服务概述**
 

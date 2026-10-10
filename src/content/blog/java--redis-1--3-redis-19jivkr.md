@@ -4,6 +4,7 @@ description: Key的设计主要围绕可读性、长度控制和生命周期展�
 pubDate: 2026-08-23
 series: Redis
 order: 4
+sort: 27
 source: Java后端/数据库/Redis/1.基础/3. Redis键值设计.md
 ---
 

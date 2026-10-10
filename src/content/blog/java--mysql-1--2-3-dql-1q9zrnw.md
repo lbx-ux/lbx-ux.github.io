@@ -4,6 +4,7 @@ description: DQLDQL英文全称是DataQueryLanguage(数据查询语言),数据�
 pubDate: 2026-08-20
 series: MySQL
 order: 4
+sort: 38
 source: Java后端/数据库/Mysql/1. 基础/2.3.DQL.md
 ---
 

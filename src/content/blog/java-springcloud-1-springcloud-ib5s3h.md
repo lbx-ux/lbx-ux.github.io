@@ -4,6 +4,7 @@ description: SpringCloud组件组件类别核心组件主要作用学习重点::
 pubDate: 2026-09-01
 series: SpringCloud
 order: 1
+sort: 3
 source: Java后端/SpringCloud/1.SpringCloud.md
 ---
 

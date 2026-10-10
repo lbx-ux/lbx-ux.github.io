@@ -4,6 +4,7 @@ description: 在MySQL中，分析SQL的执行频率（即各类语句的调用�
 pubDate: 2026-08-20
 series: MySQL
 order: 10
+sort: 44
 source: Java后端/数据库/Mysql/2. 进阶/3.SQL优化.md
 ---
 

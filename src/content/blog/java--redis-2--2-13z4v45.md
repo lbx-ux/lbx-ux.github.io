@@ -4,6 +4,7 @@ description: 一.Redis主从架构Redis的主从复制（MasterSlave/MasterRepli
 pubDate: 2026-08-23
 series: Redis
 order: 9
+sort: 32
 source: Java后端/数据库/Redis/2.高级/2. 主从同步与哨兵.md
 ---
 

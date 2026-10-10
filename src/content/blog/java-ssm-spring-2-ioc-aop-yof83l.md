@@ -4,6 +4,7 @@ description: IOC，DIIoC（控制反转）是一种软件设计思想，而DI（
 pubDate: 2026-08-24
 series: Spring
 order: 2
+sort: 22
 source: Java后端/SSM/Spring/2.IOC.AOP.md
 ---
 

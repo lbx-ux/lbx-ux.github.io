@@ -4,6 +4,7 @@ description: 阿里云图形验证码（Captcha1.0.0）集成笔记
 pubDate: 2026-07-01
 series: 验证码
 order: 3
+sort: 52
 source: 实战/验证码/3.图形认证.md
 ---
 

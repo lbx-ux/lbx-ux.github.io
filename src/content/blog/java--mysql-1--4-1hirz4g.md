@@ -4,6 +4,7 @@ description: 一.约束数据库不仅要负责存储数据，还要保证存进
 pubDate: 2026-08-20
 series: MySQL
 order: 6
+sort: 40
 source: Java后端/数据库/Mysql/1. 基础/4.约束.md
 ---
 

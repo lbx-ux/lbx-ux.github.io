@@ -4,6 +4,7 @@ description: 登录状态管理有三种最为主流的实现方案：纯Session
 pubDate: 2026-08-25
 series: 登录技术
 order: 1
+sort: 16
 source: 实战/登录技术/1.技术选型.md
 ---
 

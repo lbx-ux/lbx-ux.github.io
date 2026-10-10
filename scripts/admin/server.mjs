@@ -7,7 +7,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  loadConfig, publishUploaded, getPost, listPosts, updatePostMeta, deletePost,
+  loadConfig, publishUploaded, getPost, listPosts, updatePostMeta, deletePost, reorderPosts,
   parseFrontmatter, cleanObsidianSyntax, extractDescription, deriveSeries, deriveOrder, ROOT,
 } from './shared.mjs';
 
@@ -180,6 +180,15 @@ const server = http.createServer(async (req, res) => {
     /* 已发布列表 */
     if (pathname === '/api/posts' && req.method === 'GET') {
       return json(res, 200, { posts: listPosts() });
+    }
+
+    /* 手动排序：body = { slugs: [...] }，顺序即主页展示顺序 */
+    if (pathname === '/api/posts/reorder' && req.method === 'POST') {
+      const { slugs } = await readJsonBody(req);
+      if (!Array.isArray(slugs) || !slugs.every((s) => typeof s === 'string')) {
+        return json(res, 400, { error: 'slugs 必须是字符串数组' });
+      }
+      return json(res, 200, reorderPosts(slugs));
     }
 
     /* 单篇读取（编辑弹窗） */

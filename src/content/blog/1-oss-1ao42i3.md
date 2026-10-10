@@ -4,6 +4,7 @@ description: 阿里云对象存储OSS（ObjectStorageService），是一款海�
 pubDate: 2026-09-02
 series: 存储技术
 order: 1
+sort: 2
 source: 实战/存储技术/1.阿里OSS.md
 ---
 

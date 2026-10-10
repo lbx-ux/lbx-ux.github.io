@@ -4,6 +4,7 @@ description: MyBatis是一款优秀的持久层框架，用于简化JDBC的开�
 pubDate: 2026-08-26
 series: Mybatis
 order: 1
+sort: 14
 source: Java后端/SSM/Mybatis/1.Mybatis.md
 ---
 

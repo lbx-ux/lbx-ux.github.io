@@ -4,6 +4,7 @@ description: MySQL中的事务是将一组SQL语句作为一个不可分割的�
 pubDate: 2026-08-20
 series: MySQL
 order: 11
+sort: 45
 source: Java后端/数据库/Mysql/2. 进阶/4.事务.md
 ---
 
