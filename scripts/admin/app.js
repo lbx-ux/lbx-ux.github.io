@@ -249,21 +249,52 @@
 
   /* ── 已发布列表（按专栏分组，两级拖拽） ── */
   let seriesOrder = []; // 专栏展示顺序（后端 series-order.json）
+  const OPEN_KEY = 'admin-open-series'; // 展开过的专栏（默认全部折叠）
+  let openSeries = new Set(JSON.parse(localStorage.getItem(OPEN_KEY) || '[]'));
+  const saveOpenSeries = () => localStorage.setItem(OPEN_KEY, JSON.stringify([...openSeries]));
+
+  let lastPosts = []; // 最近一次拉到的文章（折叠/展开时无需重新请求）
 
   async function loadPosts() {
     postList.innerHTML = '<div class="loading">加载中…</div>';
     try {
       const { posts, seriesOrder: order } = await api('/api/posts');
       seriesOrder = order ?? [];
+      lastPosts = posts;
       $('#post-count').textContent = posts.length;
-      if (!posts.length) {
-        postList.innerHTML = '<div class="empty">还没有发布任何文章</div>';
-        return;
-      }
-      postList.innerHTML = groupPosts(posts).map(groupHtml).join('');
+      renderPosts();
     } catch (e) {
       postList.innerHTML = `<div class="empty">加载失败：${esc(e.message)}</div>`;
     }
+  }
+
+  function renderPosts() {
+    if (!lastPosts.length) {
+      postList.innerHTML = '<div class="empty">还没有发布任何文章</div>';
+      syncExpandLabel();
+      return;
+    }
+    postList.innerHTML = groupPosts(lastPosts).map(groupHtml).join('');
+    syncExpandLabel();
+  }
+
+  /** 展开/折叠全部：状态写进 openSeries，重渲染后保持一致 */
+  function setAllOpen(open) {
+    for (const p of groupPosts(lastPosts)) {
+      if (open) openSeries.add(p.series);
+      else openSeries.delete(p.series);
+    }
+    saveOpenSeries();
+    renderPosts();
+  }
+
+  function allGroupsOpen() {
+    const groups = groupPosts(lastPosts);
+    return groups.length > 0 && groups.every((g) => openSeries.has(g.series));
+  }
+
+  function syncExpandLabel() {
+    $('#btn-expand-all').textContent = allGroupsOpen() ? '折叠全部' : '展开全部';
   }
 
   /** 按专栏分组：已登记专栏按 seriesOrder 排，未登记/无专栏的跟在后面 */
@@ -281,7 +312,7 @@
 
   function groupHtml(g) {
     return `
-      <section class="series-group" data-series="${esc(g.series)}">
+      <section class="series-group${openSeries.has(g.series) ? '' : ' collapsed'}" data-series="${esc(g.series)}">
         <div class="sg-head" draggable="true" title="拖动调整专栏顺序">
           <span class="sg-grip" aria-hidden="true">
             <svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.7"/><circle cx="15" cy="5" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="19" r="1.7"/><circle cx="15" cy="19" r="1.7"/></svg>
@@ -318,12 +349,18 @@
   }
 
   $('#btn-refresh-posts').addEventListener('click', loadPosts);
+  $('#btn-expand-all').addEventListener('click', () => setAllOpen(!allGroupsOpen()));
 
   postList.addEventListener('click', async (e) => {
-    // 专栏折叠
+    // 专栏折叠（记住展开过的专栏，拖拽后重新拉取列表不会缩回去）
     const toggle = e.target.closest('[data-toggle]');
     if (toggle) {
-      toggle.closest('.series-group').classList.toggle('collapsed');
+      const group = toggle.closest('.series-group');
+      const collapsed = group.classList.toggle('collapsed');
+      if (collapsed) openSeries.delete(group.dataset.series);
+      else openSeries.add(group.dataset.series);
+      saveOpenSeries();
+      syncExpandLabel();
       return;
     }
     const btn = e.target.closest('[data-action]');
