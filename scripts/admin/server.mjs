@@ -1,15 +1,14 @@
 /**
  * lbx's Blog 发布后台 —— 本地 Node 服务（零依赖，仅绑定 127.0.0.1）。
- * 功能：浏览 Obsidian 库 → 挑选笔记 → 可视化编辑元信息 → 发布/下架/删除博客文章。
+ * 功能：上传 .md + 图片 → 可视化编辑元信息 → 发布；已发布文章的元信息与正文在线编辑。
  * 启动：双击 scripts/admin/启动发布后台.bat，或 node scripts/admin/server.mjs
  */
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFile } from 'node:child_process';
 import {
-  loadConfig, saveConfig, listAllNotes, noteHeadline,
-  publishNote, listPosts, updatePostMeta, deletePost, ROOT,
+  loadConfig, publishUploaded, getPost, listPosts, updatePostMeta, deletePost,
+  parseFrontmatter, cleanObsidianSyntax, extractDescription, deriveSeries, deriveOrder, ROOT,
 } from './shared.mjs';
 
 const HOST = '127.0.0.1';
@@ -31,7 +30,7 @@ function json(res, code, data) {
   res.end(JSON.stringify(data));
 }
 
-function readBody(req) {
+function readJsonBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', (c) => {
@@ -49,6 +48,62 @@ function readBody(req) {
   });
 }
 
+/** 收集原始 body（Buffer），multipart 用（200MB 上限，够一次批量传图） */
+function readRawBody(req, max = 200e6) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    req.on('data', (c) => {
+      size += c.length;
+      if (size > max) {
+        req.destroy();
+        reject(new Error('请求体过大'));
+        return;
+      }
+      chunks.push(c);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+/**
+ * 零依赖 multipart/form-data 解析。
+ * 返回 { fields: {name: value}, files: [{name, filename, data}] }。
+ */
+function parseMultipart(body, contentType) {
+  const m = /boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType);
+  if (!m) throw new Error('缺少 multipart boundary');
+  const boundary = Buffer.from(`--${(m[1] || m[2]).trim()}`);
+  const fields = {};
+  const files = [];
+
+  let pos = body.indexOf(boundary);
+  while (pos !== -1) {
+    const partStart = pos + boundary.length;
+    // 结束标记 --boundary--
+    if (body.slice(partStart, partStart + 2).toString() === '--') break;
+    // 每个 part：\r\n 头部 \r\n\r\n 内容 \r\n
+    const headEnd = body.indexOf('\r\n\r\n', partStart);
+    if (headEnd === -1) break;
+    const next = body.indexOf(boundary, headEnd + 4);
+    if (next === -1) break;
+    const head = body.slice(partStart + 2, headEnd).toString('utf-8');
+    const data = body.slice(headEnd + 4, next - 2); // 去掉尾部 \r\n
+
+    const nameM = /name="([^"]*)"/i.exec(head);
+    const fileM = /filename="([^"]*)"/i.exec(head);
+    const fieldName = nameM?.[1] ?? '';
+    if (fileM && fileM[1]) {
+      files.push({ name: fieldName, filename: fileM[1], data });
+    } else if (fieldName) {
+      fields[fieldName] = data.toString('utf-8');
+    }
+    pos = next;
+  }
+  return { fields, files };
+}
+
 function serveFile(res, filePath) {
   if (!fs.existsSync(filePath)) {
     res.writeHead(404).end('Not Found');
@@ -58,21 +113,9 @@ function serveFile(res, filePath) {
   res.end(fs.readFileSync(filePath));
 }
 
-/* ── git 部署 ─────────────────────────────────────────── */
-const GIT_OPTS = { cwd: ROOT, windowsHide: true, timeout: 120_000, encoding: 'utf-8' };
-const git = (args) =>
-  new Promise((resolve, reject) => {
-    execFile('git', args, GIT_OPTS, (err, stdout, stderr) =>
-      err ? reject(new Error(String(stderr || err.message).trim())) : resolve(String(stdout).trim()),
-    );
-  });
-
-/** 只统计内容目录的变更（博客文章 + 图片），用户手改的其它文件不参与自动提交 */
-function contentChanges() {
-  return git(['status', '--porcelain', '--', 'src/content/blog', 'public/covers'])
-    .then((out) => out.split('\n').filter(Boolean))
-    .catch(() => []);
-}
+/** 私密目录提醒（仅提示，不阻断）：这些顶层目录的笔记默认不发博客 */
+const PRIVATE_DIRS = ['实习', '简历', '日常'];
+const isPrivateRel = (rel) => PRIVATE_DIRS.some((d) => rel === d || rel.startsWith(`${d}/`));
 
 /* ── 路由 ─────────────────────────────────────────────── */
 const server = http.createServer(async (req, res) => {
@@ -80,43 +123,75 @@ const server = http.createServer(async (req, res) => {
   const { pathname } = url;
 
   try {
-    /* API */
-    if (pathname === '/api/notes' && req.method === 'GET') {
-      const q = (url.searchParams.get('q') ?? '').toLowerCase();
+    /* 上传预览：前端把 md 文本发来，返回清洗预览 + 自动推导的元信息建议 */
+    if (pathname === '/api/upload/preview' && req.method === 'POST') {
+      const { rel, raw } = await readJsonBody(req);
+      if (!rel || typeof raw !== 'string') return json(res, 400, { error: '缺少 rel 或 raw' });
       const cfgNow = loadConfig();
-      let notes = listAllNotes(cfgNow);
-      if (q) notes = notes.filter((n) => n.rel.toLowerCase().includes(q));
-      const withMeta = notes.map((n) => {
-        try {
-          return { ...n, ...noteHeadline(n.rel, cfgNow) };
-        } catch {
-          return { ...n, title: path.basename(n.rel, '.md'), excerpt: '' };
-        }
+      const { meta: fm, body } = parseFrontmatter(raw);
+      const cleaned = cleanObsidianSyntax(body);
+      const title = fm.title || path.basename(rel, '.md');
+      const series = deriveSeries(rel, cfgNow);
+      return json(res, 200, {
+        title,
+        description: fm.description || extractDescription(cleaned),
+        series,
+        order: deriveOrder(rel, series, cfgNow),
+        raw: cleaned.length > 6000 ? `${cleaned.slice(0, 6000)}\n\n…（后文省略，共 ${cleaned.length} 字符）` : cleaned,
+        privateHint: isPrivateRel(rel),
       });
-      return json(res, 200, { notes: withMeta, vault: cfgNow.vaultPath });
     }
 
-    if (pathname === '/api/preview' && req.method === 'POST') {
-      const { rel } = await readBody(req);
-      const cfgNow = loadConfig();
-      const raw = fs.readFileSync(path.join(cfgNow.vaultPath, rel), 'utf-8');
-      return json(res, 200, { raw });
+    /* 上传发布：multipart —— note = .md 文件，images = 正文引用的图片 */
+    if (pathname === '/api/upload/publish' && req.method === 'POST') {
+      const body = await readRawBody(req);
+      const { fields, files } = parseMultipart(body, req.headers['content-type'] ?? '');
+      const note = files.find((f) => f.name === 'note');
+      if (!note) return json(res, 400, { error: '缺少笔记文件（note）' });
+
+      const rel = (fields.rel || note.filename).replace(/\.(md|markdown)$/i, '');
+      if (!rel) return json(res, 400, { error: '缺少 rel' });
+
+      const images = new Map();
+      for (const f of files) {
+        if (f.name === 'images' || f.name === 'note') {
+          if (f !== note) images.set(f.filename.toLowerCase(), f.data);
+        }
+      }
+
+      const result = await publishUploaded({
+        rel: rel.replace(/\.md$/i, ''),
+        raw: note.data.toString('utf-8'),
+        images,
+        overrides: {
+          title: fields.title?.trim() || undefined,
+          description: fields.description?.trim() || undefined,
+          series: fields.series?.trim() || undefined,
+          order: fields.order?.trim() || undefined,
+          pubDate: fields.pubDate || undefined,
+          draft: fields.draft === 'true',
+        },
+      });
+      if (result.error) return json(res, 400, result);
+      const { copied, content, ...rest } = result;
+      return json(res, 200, rest);
     }
 
-    if (pathname === '/api/publish' && req.method === 'POST') {
-      const { rel, ...overrides } = await readBody(req);
-      if (!rel) return json(res, 400, { error: '缺少 rel 参数' });
-      const result = await publishNote(rel, overrides);
-      return result.error ? json(res, 400, result) : json(res, 200, result);
-    }
-
+    /* 已发布列表 */
     if (pathname === '/api/posts' && req.method === 'GET') {
       return json(res, 200, { posts: listPosts() });
     }
 
+    /* 单篇读取（编辑弹窗） */
+    if (pathname.startsWith('/api/posts/') && req.method === 'GET') {
+      const slug = decodeURIComponent(pathname.split('/').pop());
+      const result = getPost(slug);
+      return result.error ? json(res, 404, result) : json(res, 200, result);
+    }
+
     if (pathname.startsWith('/api/posts/') && req.method === 'PATCH') {
       const slug = decodeURIComponent(pathname.split('/').pop());
-      const patch = await readBody(req);
+      const patch = await readJsonBody(req);
       const result = updatePostMeta(slug, patch);
       return result.error ? json(res, 400, result) : json(res, 200, result);
     }
@@ -125,71 +200,6 @@ const server = http.createServer(async (req, res) => {
       const slug = decodeURIComponent(pathname.split('/').pop());
       const result = deletePost(slug);
       return result.error ? json(res, 400, result) : json(res, 200, result);
-    }
-
-    if (pathname === '/api/config' && req.method === 'PATCH') {
-      const patch = await readBody(req);
-      // 只允许改 vaultPath / port，防止把任意路径当文件系统入口
-      const next = {};
-      if (typeof patch.vaultPath === 'string' && patch.vaultPath.trim()) next.vaultPath = patch.vaultPath.trim();
-      if (Number.isInteger(patch.port) && patch.port > 0 && patch.port < 65536) next.port = patch.port;
-      saveConfig(next);
-      return json(res, 200, { ok: true, config: loadConfig() });
-    }
-
-    /* 发布即上线：git 提交 + 推送（仅内容目录） */
-    if (pathname === '/api/deploy/status' && req.method === 'GET') {
-      let hasRemote = false;
-      try {
-        hasRemote = (await git(['remote', 'get-url', 'origin'])).length > 0;
-      } catch {
-        hasRemote = false;
-      }
-      const changes = await contentChanges();
-      return json(res, 200, { hasRemote, changes });
-    }
-
-    if (pathname === '/api/deploy' && req.method === 'POST') {
-      try {
-        const changes = await contentChanges();
-        if (!changes.length) {
-          return json(res, 200, { ok: true, message: '没有需要推送的变更（内容目录已是最新）' });
-        }
-        let branch;
-        try {
-          branch = await git(['rev-parse', '--abbrev-ref', 'HEAD']);
-        } catch (e) {
-          return json(res, 400, { error: `不是 git 仓库或无法获取分支：${e.message}` });
-        }
-        if (branch === 'HEAD') return json(res, 400, { error: '当前处于 detached HEAD，无法推送' });
-
-        await git(['add', '-A', '--', 'src/content/blog', 'public/covers']);
-        const msg = `publish: 发布后台自动推送（${new Date().toISOString().slice(0, 10)}）`;
-        await git(['commit', '-m', msg]);
-
-        let hasRemote = true;
-        try {
-          await git(['remote', 'get-url', 'origin']);
-        } catch {
-          hasRemote = false;
-        }
-        if (!hasRemote) {
-          return json(res, 200, {
-            ok: true,
-            committed: true,
-            message: `已提交 ${changes.length} 个文件，但尚未配置远程仓库（git remote add origin <地址> 后再推送）`,
-          });
-        }
-        const pushOut = await git(['push', 'origin', branch]);
-        return json(res, 200, {
-          ok: true,
-          committed: true,
-          message: `已推送 ${changes.length} 个文件到 origin/${branch}，GitHub Actions 约 2 分钟后自动上线`,
-          detail: pushOut.slice(-400),
-        });
-      } catch (e) {
-        return json(res, 500, { error: `推送失败：${e.message}` });
-      }
     }
 
     /* 静态页面 */
@@ -216,5 +226,4 @@ server.listen(PORT, HOST, () => {
   console.log(`│   ${`http://${HOST}:${PORT}`.padEnd(44)}│`);
   console.log('│   仅限本机访问，关闭此窗口即停止服务        │');
   console.log('└─────────────────────────────────────────────┘');
-  console.log(`Obsidian 库：${cfg.vaultPath}`);
 });

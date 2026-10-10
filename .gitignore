@@ -7,7 +7,7 @@ dist/
 .claude/
 *.local
 
-# 发布后台本地配置（含本机 Obsidian 库路径，因人而异）
+# 发布后台本地配置（本机端口等，因人而异）
 scripts/admin/config.json
 
 # 系统杂项

@@ -11,7 +11,6 @@ const ROOT = path.resolve(import.meta.dirname, '../..');
 const CONFIG_FILE = path.join(ROOT, 'scripts/admin/config.json');
 
 const DEFAULT_CONFIG = {
-  vaultPath: 'E:/Note',
   blogDir: 'src/content/blog',
   port: 8799,
   /** 正文图片优化：超过该宽度等比缩小（0 = 不限宽） */
@@ -54,41 +53,7 @@ export function saveConfig(patch) {
 }
 
 /* ── 库浏览 ───────────────────────────────────────────── */
-export function listAllNotes(cfg = loadConfig()) {
-  const vault = cfg.vaultPath;
-  const walk = (dir, base = '') => {
-    const out = [];
-    let entries;
-    try {
-      entries = fs.readdirSync(dir, { withFileTypes: true });
-    } catch {
-      return out;
-    }
-    for (const entry of entries) {
-      const rel = base ? `${base}/${entry.name}` : entry.name;
-      if (entry.isDirectory()) {
-        out.push(...walk(path.join(dir, entry.name), rel));
-      } else if (entry.name.endsWith('.md')) {
-        const stat = fs.statSync(path.join(dir, entry.name));
-        out.push({ rel, mtime: stat.mtime.toISOString(), size: stat.size });
-      }
-    }
-    return out;
-  };
-  return walk(vault).sort((a, b) => a.rel.localeCompare(b.rel, 'zh'));
-}
-
-/** 取笔记头部信息（首个标题/首段），用于列表预览 */
-export function noteHeadline(rel, cfg = loadConfig()) {
-  const raw = fs.readFileSync(path.join(cfg.vaultPath, rel), 'utf-8');
-  const { meta, body } = parseFrontmatter(raw);
-  const heading = body.match(/^#{1,3} (.+)$/m)?.[1];
-  const firstLine = body
-    .split(/\n{2,}/)
-    .map((p) => p.replace(/[#>*`\-|[\]]/g, '').trim())
-    .find((p) => p.length > 5);
-  return { title: meta.title || heading || path.basename(rel, '.md'), excerpt: (firstLine ?? '').slice(0, 80) };
-}
+/* 已改为上传制：不再读取本地 Obsidian 库，笔记与图片由前端直接上传。 */
 
 /* ── 专栏推导 ─────────────────────────────────────────── */
 /** 按 source 路径子串匹配专栏，先专后泛；都不命中时兜底 = source 顶层目录名 */
@@ -180,7 +145,7 @@ export function cleanObsidianSyntax(content) {
   );
 }
 
-function extractDescription(body) {
+export function extractDescription(body) {
   const firstPara = body
     .split(/\n{2,}/)
     // 跳过纯图片段落：先剥掉图片语法再取文字，避免把畸形 URL 塞进描述
@@ -194,22 +159,49 @@ function extractDescription(body) {
   return firstPara ? firstPara.slice(0, 100) : '（待补充描述）';
 }
 
-/** 图片在库里找不到时，按这些目录顺序去找（笔记里常见绝对路径/库外路径） */
+/** 上传图片在库里找不到时，按这些目录顺序去找（笔记里常见绝对路径/库外路径） */
 const IMAGE_SEARCH_DIRS = ['F:/message/pixpin'];
 
 /**
- * 处理正文里的本地图片：
+ * 处理上传正文里的本地图片引用：
  *  1. ![[xxx.png]]（Obsidian 嵌入）先转成标准 ![](xxx.png)；
- *  2. 所有指向本地存在的图片 → 复制到 public/covers/<slug>/，路径改写为 /covers/<slug>/xxx.png；
- *  3. 找不到的图片 → 注释占位，提醒手动处理。
- * 返回 { body: 改写后的正文, copied: 本次落盘的图片绝对路径 }（压缩在 publishNote 阶段统一做）。
+ *  2. 所有指向本地的图片引用 → 按文件名查上传的 images map，命中直接落盘到
+ *     public/covers/<slug>/ 并改写为 /covers/<slug>/xxx.png；
+ *  3. map 未命中 → 按 IMAGE_SEARCH_DIRS 兜底查找；
+ *  4. 都找不到 → 注释占位，提醒手动处理。
+ * 参数 images：Map<文件名(小写), Buffer>，来自上传请求。
+ * 返回 { body: 改写后的正文, copied: 本次落盘的图片绝对路径 }（压缩在 publishUploaded 阶段统一做）。
  */
-function processImages(body, slug, cfg) {
+function processImages(body, slug, cfg, images = new Map()) {
   // Obsidian 嵌入图 → 标准 Markdown（供下一步统一处理）
   let out = body.replace(/!\[\[([^\]]+)\]\]/g, '![]($1)');
 
-  const seen = new Map(); // 原路径 → 是否成功复制
-  const copied = []; // 本次发布复制出来的图片（绝对路径），供 optimizeCopiedImages 压缩
+  /** 按文件名取图片 Buffer：上传 map 优先，库外搜索目录兜底；返回 null 表示找不到 */
+  const resolveImage = (fileName) => {
+    const hit = images.get(fileName.toLowerCase());
+    if (hit) return { data: hit };
+    for (const d of IMAGE_SEARCH_DIRS) {
+      const c = `${d}/${fileName}`;
+      try {
+        if (fs.existsSync(c) && fs.statSync(c).isFile()) return { data: fs.readFileSync(c) };
+      } catch {
+        /* 路径非法，跳过 */
+      }
+    }
+    return null;
+  };
+
+  /** 把图片数据写入 public/covers/<slug>/，返回绝对路径 */
+  const saveImage = (fileName, data) => {
+    const destDir = path.join(ROOT, 'public/covers', slug);
+    fs.mkdirSync(destDir, { recursive: true });
+    const destFile = path.join(destDir, fileName);
+    fs.writeFileSync(destFile, data);
+    return destFile;
+  };
+
+  const seen = new Map(); // 引用路径 → 是否成功落盘
+  const copied = []; // 本次落盘的图片绝对路径，供 optimizeCopiedImages 压缩
   out = out.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, rawPath) => {
     const imgPath = rawPath.trim();
     // 已经是网络图/站点绝对路径，不动
@@ -220,69 +212,29 @@ function processImages(body, slug, cfg) {
       return seen.get(imgPath) ? `![${alt}](/covers/${slug}/${encodeURIComponent(fileName)})` : `<!-- 缺图：${fileName} -->`;
     }
 
-    // 候选源：笔记原路径（绝对/相对）、配置的搜索目录按文件名找
-    const candidates = [
-      imgPath.includes('\\') ? imgPath : imgPath.replace(/\//g, '\\'),
-      imgPath.includes('/') ? imgPath : imgPath.replace(/\\/g, '/'),
-      ...IMAGE_SEARCH_DIRS.map((d) => `${d}/${fileName}`),
-    ];
-    let srcFile = null;
-    for (const c of candidates) {
-      try {
-        if (fs.existsSync(c) && fs.statSync(c).isFile()) {
-          srcFile = c;
-          break;
-        }
-      } catch {
-        /* 路径非法，跳过 */
-      }
-    }
-
-    if (!srcFile) {
+    const img = resolveImage(fileName);
+    if (!img) {
       seen.set(imgPath, false);
-      return `<!-- 缺图：${fileName} —— 未找到源文件，请手动放置到 public/covers/${slug}/ 并改此行为 ![](/covers/${slug}/${encodeURIComponent(fileName)}) -->`;
+      return `<!-- 缺图：${fileName} —— 未随笔记上传，请手动放置到 public/covers/${slug}/ 并改此行为 ![](/covers/${slug}/${encodeURIComponent(fileName)}) -->`;
     }
 
-    // 复制到 public/covers/<slug>/
-    const destDir = path.join(ROOT, 'public/covers', slug);
-    fs.mkdirSync(destDir, { recursive: true });
-    const destFile = path.join(destDir, fileName);
-    fs.copyFileSync(srcFile, destFile);
-    copied.push(destFile);
+    copied.push(saveImage(fileName, img.data));
     seen.set(imgPath, true);
     return `![${alt}](/covers/${slug}/${encodeURIComponent(fileName)})`;
   });
 
-  // HTML <img src="本地路径"> → 复制后改写为站点绝对路径（保留原标签的 style/alt 等属性）
+  // HTML <img src="本地路径"> → 落盘后改写为站点绝对路径（保留原标签的 style/alt 等属性）
   out = out.replace(/<img\s+[^>]*src=["']([^"']+)["'][^>]*>/g, (m, rawSrc) => {
     const imgPath = rawSrc.trim();
     if (/^(https?:|\/\/|\/covers\/)/.test(imgPath)) return m;
 
     const fileName = imgPath.split(/[\\/]/).pop();
-    // Markdown 阶段已复制过同名文件就直接复用
-    const destDir = path.join(ROOT, 'public/covers', slug);
-    const destFile = path.join(destDir, fileName);
+    // Markdown 阶段已落盘过同名文件就直接复用
+    const destFile = path.join(ROOT, 'public/covers', slug, fileName);
     if (!fs.existsSync(destFile)) {
-      const candidates = [
-        imgPath.includes('\\') ? imgPath : imgPath.replace(/\//g, '\\'),
-        imgPath.includes('/') ? imgPath : imgPath.replace(/\\/g, '/'),
-        ...IMAGE_SEARCH_DIRS.map((d) => `${d}/${fileName}`),
-      ];
-      let srcFile = null;
-      for (const c of candidates) {
-        try {
-          if (fs.existsSync(c) && fs.statSync(c).isFile()) {
-            srcFile = c;
-            break;
-          }
-        } catch {
-          /* 跳过非法路径 */
-        }
-      }
-      if (!srcFile) return `<!-- 缺图：${fileName} —— 未找到源文件 -->`;
-      fs.mkdirSync(destDir, { recursive: true });
-      fs.copyFileSync(srcFile, destFile);
-      copied.push(destFile);
+      const img = resolveImage(fileName);
+      if (!img) return `<!-- 缺图：${fileName} —— 未随笔记上传 -->`;
+      copied.push(saveImage(fileName, img.data));
     }
     return m.replace(rawSrc, `/covers/${slug}/${encodeURIComponent(fileName)}`);
   });
@@ -305,27 +257,26 @@ function makeSlug(rel) {
 
 /* ── 构建文章 ─────────────────────────────────────────── */
 /**
- * 把一篇笔记转换为博客文章数据（不落盘）。
- * overrides 允许后台/CLI 覆盖自动检测的 title/description/pubDate/draft。
+ * 把上传的笔记内容转换为博客文章数据（不落盘）。
+ * raw 为笔记文本；rel 优先用浏览器提供的相对路径（如「Java后端/数据库/Redis/1.基础/1. Redis.md」，
+ * 来自 webkitRelativePath），专栏/序号按它推导；单文件上传没有路径时用文件名，专栏靠弹窗手填。
+ * overrides 允许覆盖自动检测的 title/description/pubDate/draft/series/order。
+ * images：Map<文件名(小写), Buffer>，正文图片引用按文件名从中取数落盘。
  */
-export function buildPost(rel, overrides = {}, cfg = loadConfig()) {
-  const src = path.join(cfg.vaultPath, rel);
-  if (!fs.existsSync(src)) return { error: `笔记不存在：${rel}` };
-
-  const raw = fs.readFileSync(src, 'utf-8');
+export function buildPostFromRaw({ rel, raw, images, overrides = {}, cfg = loadConfig() }) {
   const { meta: fm, body } = parseFrontmatter(raw);
 
   const title = overrides.title ?? fm.title ?? path.basename(rel, '.md');
   const pubDate =
-    overrides.pubDate ?? fm.pubdate ?? fm.date ?? fs.statSync(src).mtime.toISOString().slice(0, 10);
+    overrides.pubDate ?? fm.pubdate ?? fm.date ?? new Date().toISOString().slice(0, 10);
 
   const cleaned0 = cleanObsidianSyntax(body);
-  // 先定 slug（图片要复制到以 slug 命名的目录），再处理图片路径
+  // 先定 slug（图片要落到以 slug 命名的目录），再处理图片路径
   let slug = makeSlug(rel);
   let n = 2;
   while (fs.existsSync(path.join(ROOT, cfg.blogDir, `${slug}.md`))) slug = `${makeSlug(rel)}-${n++}`;
 
-  const { body: cleaned, copied } = processImages(cleaned0, slug, cfg);
+  const { body: cleaned, copied } = processImages(cleaned0, slug, cfg, images ?? new Map());
   const description = overrides.description ?? fm.description ?? extractDescription(cleaned);
   const draft = overrides.draft === true || overrides.draft === 'true' || fm.draft === 'true';
 
@@ -364,7 +315,7 @@ async function loadSharp() {
 }
 
 /**
- * 压缩 buildPost 阶段复制到 public/covers/<slug>/ 的图片：
+ * 压缩 buildPostFromRaw 阶段落盘到 public/covers/<slug>/ 的图片：
  *  - 宽度超过 cfg.imageMaxWidth（默认 1200）时等比缩小；
  *  - PNG：WebP 与压缩 PNG 择优，WebP 明显更小才换扩展名（正文引用同步改写）；
  *  - JPEG：mozjpeg 重编码，体积无优势则保留原图；
@@ -433,9 +384,9 @@ export async function optimizeCopiedImages(post, cfg = loadConfig()) {
   return { ...post, content, imageSavedBytes: saved, imageRenamed: renames.length };
 }
 
-/** 转换 + 图片压缩 + 写入博客目录 */
-export async function publishNote(rel, overrides = {}, cfg = loadConfig()) {
-  let post = buildPost(rel, overrides, cfg);
+/** 转换上传内容 + 图片压缩 + 写入博客目录 */
+export async function publishUploaded({ rel, raw, images, overrides = {}, cfg = loadConfig() }) {
+  let post = buildPostFromRaw({ rel, raw, images, overrides, cfg });
   if (post.error) return post;
   post = await optimizeCopiedImages(post, cfg);
   const dir = path.join(ROOT, cfg.blogDir);
@@ -468,7 +419,25 @@ export function listPosts(cfg = loadConfig()) {
     .sort((a, b) => (b.pubDate || '').localeCompare(a.pubDate || ''));
 }
 
-/** 更新已发布文章的 frontmatter（不动正文） */
+/** 读取单篇文章：frontmatter + 正文（编辑弹窗用） */
+export function getPost(slug, cfg = loadConfig()) {
+  const file = path.join(ROOT, cfg.blogDir, `${slug}.md`);
+  if (!fs.existsSync(file)) return { error: `文章不存在：${slug}` };
+  const { meta, body } = parseFrontmatter(fs.readFileSync(file, 'utf-8'));
+  return {
+    slug,
+    title: meta.title ?? slug,
+    description: meta.description ?? '',
+    pubDate: meta.pubdate ?? '',
+    tags: meta.tags ?? '',
+    series: meta.series ?? null,
+    order: meta.order ?? null,
+    draft: meta.draft === 'true',
+    body: body.replace(/^\r?\n\r?\n/, ''),
+  };
+}
+
+/** 更新已发布文章的 frontmatter；patch.body 传入时同时替换正文（编辑功能） */
 export function updatePostMeta(slug, patch, cfg = loadConfig()) {
   const file = path.join(ROOT, cfg.blogDir, `${slug}.md`);
   if (!fs.existsSync(file)) return { error: `文章不存在：${slug}` };
@@ -493,7 +462,7 @@ export function updatePostMeta(slug, patch, cfg = loadConfig()) {
     ...(meta.source ? [`source: ${meta.source}`] : []),
     '---',
   ];
-  fs.writeFileSync(file, frontmatterLines.join('\n') + '\n\n' + body.replace(/^\r?\n\r?\n/, ''), 'utf-8');
+  fs.writeFileSync(file, frontmatterLines.join('\n') + '\n\n' + (typeof patch.body === 'string' ? patch.body : body.replace(/^\r?\n\r?\n/, '')), 'utf-8');
   return { slug, ok: true };
 }
 

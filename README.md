@@ -42,7 +42,6 @@ npm run dev       # http://localhost:4321
 | `npm run build` | 构建到 `dist/` |
 | `npm run preview` | 预览构建产物 |
 | `npm run og` | 重新生成 `public/og-default.png`（默认分享图） |
-| `npm run note` | CLI 导入一篇 Obsidian 笔记（交互式） |
 
 ## ✍️ 写作
 
@@ -60,14 +59,15 @@ series: 专栏名        # 可选，发布后台自动推导
 正文 Markdown……
 ```
 
-## 🗂 Obsidian 发布后台（本地工具）
+## 🗂 上传发布后台（本地工具）
 
-本博客配套一个**本地运行的发布后台**（零依赖 Node 脚本，仅绑定 `127.0.0.1`，不对公网暴露），用于把 Obsidian 笔记一键转为博客文章：
+本博客配套一个**本地运行的发布后台**（零依赖 Node 脚本，仅绑定 `127.0.0.1`，不对公网暴露），通过**拖拽上传**发布文章：
 
-- 浏览 Obsidian 库（按文件夹路径分组展示、可折叠、支持搜索）
-- 可视化编辑标题 / 描述 / 日期 / 专栏 / 草稿状态
-- 自动完成：Obsidian 语法清洗（`![[嵌入]]`、callout、双链等）、本地图片复制与压缩（限宽 + PNG→WebP 择优，可用 `scripts/admin/config.json` 的 `imageMaxWidth` / `imageQuality` 调整）、frontmatter 补全、slug 生成
-- 已发布文章管理：编辑元信息 / 下架转草稿 / 删除
+- 拖入 `.md` 笔记与图片（或点击「选择文件 / 选择文件夹」；选文件夹会保留目录结构）
+- 专栏与序号**按上传的目录路径自动推导**（如 `Java后端/数据库/Redis/…` → Redis 专栏），可在发布弹窗手改
+- 自动完成：Obsidian 语法清洗（`![[嵌入]]`、callout、双链等）、图片配对落盘与压缩（限宽 + PNG→WebP 择优，可用 `scripts/admin/config.json` 的 `imageMaxWidth` / `imageQuality` 调整）、frontmatter 补全、slug 生成
+- 正文里引用但未随笔记上传的图片会留「缺图」注释占位，手动把图片放进 `public/covers/<slug>/` 后改回链接即可
+- 已发布文章管理：**在线编辑正文与元信息** / 下架转草稿 / 删除
 
 启动方式：双击 `scripts/admin/启动发布后台.bat`，或：
 
@@ -75,7 +75,7 @@ series: 专栏名        # 可选，发布后台自动推导
 node scripts/admin/server.mjs   # http://127.0.0.1:8799
 ```
 
-> 库路径等配置存于 `scripts/admin/config.json`（已 gitignore，不会上传）。顶栏设置里可修改 Obsidian 库路径。
+> 端口等配置存于 `scripts/admin/config.json`（已 gitignore，不会上传）。
 
 ## 📦 部署到 GitHub Pages
 
@@ -95,9 +95,10 @@ node scripts/admin/server.mjs   # http://127.0.0.1:8799
 
 4. **开启 Pages**：仓库 **Settings → Pages → Build and deployment → Source** 选 **GitHub Actions**
 5. 推送到 `main` 后，[.github/workflows/deploy.yml](.github/workflows/deploy.yml) 自动构建部署；也可以在 Actions 页手动触发（`workflow_dispatch`）
+   > ⏸ 部署目前**已冻结**：workflow 只保留手动触发。恢复自动部署：把 deploy.yml `on:` 里的 push 触发加回来即可。
 6. 部署完成后访问 `https://<用户名>.github.io/<仓库名>/`
 
-> 🔒 注意：`scripts/admin/` 与你的 Obsidian 库完全独立于构建产物，不会被部署；`config.json` 已在 `.gitignore` 中排除。
+> 🔒 注意：`scripts/admin/` 完全独立于构建产物，不会被部署；`config.json` 已在 `.gitignore` 中排除。
 
 ## 🛠 技术栈
 

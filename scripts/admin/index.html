@@ -21,14 +21,6 @@
       <h1>lbx's Blog 发布后台</h1>
     </div>
     <div class="topbar-actions">
-      <span id="vault-path" class="vault-path" title="Obsidian 库位置"></span>
-      <button id="btn-deploy" class="deploy-btn" title="提交并推送到 GitHub（自动部署上线）">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
-        推送上线
-      </button>
-      <button id="btn-settings" class="icon-btn" title="设置" aria-label="设置">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </button>
       <button id="btn-theme" class="icon-btn" title="切换主题" aria-label="切换主题">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
       </button>
@@ -36,11 +28,26 @@
   </header>
 
   <main class="layout">
-    <!-- 左栏：Obsidian 库 -->
-    <section class="panel glass" aria-label="Obsidian 笔记库">
+    <!-- 左栏：上传笔记 -->
+    <section class="panel glass" aria-label="上传笔记">
       <div class="panel-head">
-        <h2>笔记库</h2>
-        <input id="search" type="search" placeholder="搜索笔记…" aria-label="搜索笔记" />
+        <h2>上传笔记</h2>
+        <input id="search" type="search" placeholder="过滤已选文件…" aria-label="过滤已选文件" />
+      </div>
+      <div id="drop-zone" class="drop-zone" tabindex="0" role="button"
+           aria-label="拖拽或点击选择文件"
+           title="支持 .md 笔记与图片；选文件夹可保留目录结构用于专栏自动推导">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>
+        <p class="dz-main">拖拽笔记 / 图片到此处，或点击选择</p>
+        <p class="dz-sub">选中文件夹可保留目录结构，专栏与序号自动推导</p>
+      </div>
+      <input id="file-input" type="file" multiple accept=".md,.markdown,image/*" hidden />
+      <input id="folder-input" type="file" multiple webkitdirectory hidden />
+      <div class="pick-row">
+        <button id="btn-pick-files" class="ghost-btn">选择文件</button>
+        <button id="btn-pick-folder" class="ghost-btn">选择文件夹</button>
+        <span id="picked-stats" class="picked-stats"></span>
+        <button id="btn-clear-picked" class="ghost-btn" hidden>清空</button>
       </div>
       <div id="note-list" class="note-list" role="list"></div>
     </section>
@@ -64,6 +71,9 @@
       </button>
     </div>
     <div class="dialog-body">
+      <p id="private-hint" class="private-hint" hidden>
+        ⚠ 该笔记位于私密目录（实习 / 简历 / 日常），确认要公开发布吗？
+      </p>
       <div class="meta-form">
         <label>标题 <input id="f-title" type="text" /></label>
         <label>描述 <input id="f-desc" type="text" placeholder="留空自动提取首段" /></label>
@@ -79,28 +89,11 @@
         </label>
       </div>
       <pre id="preview-content" class="preview-content" tabindex="0"></pre>
+      <textarea id="edit-content" class="preview-content edit-area" spellcheck="false" hidden></textarea>
     </div>
     <div class="dialog-foot">
       <span id="publish-status" class="publish-status" role="status"></span>
       <button id="btn-publish" class="primary-btn">发布</button>
-    </div>
-  </dialog>
-
-  <!-- 设置弹窗 -->
-  <dialog id="settings-dialog" class="glass dialog dialog-sm">
-    <div class="dialog-head">
-      <h3>设置</h3>
-      <button class="icon-btn" data-close aria-label="关闭">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div class="dialog-body">
-      <label>Obsidian 库路径 <input id="s-vault" type="text" spellcheck="false" /></label>
-      <p class="hint">修改后点击保存，笔记列表会重新加载。</p>
-    </div>
-    <div class="dialog-foot">
-      <span id="settings-status" class="publish-status"></span>
-      <button id="btn-save-settings" class="primary-btn">保存</button>
     </div>
   </dialog>
 

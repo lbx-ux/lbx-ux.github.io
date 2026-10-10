@@ -1,4 +1,4 @@
-/* Aurora 发布后台 · 前端逻辑（零依赖） */
+/* lbx's Blog 发布后台 · 前端逻辑（零依赖） */
 (() => {
   'use strict';
 
@@ -8,8 +8,9 @@
   const searchInput = $('#search');
   const toastEl = $('#toast');
 
-  let notes = [];
-  let currentRel = null; // 当前预览/发布的笔记
+  /* ── 状态 ── */
+  let pickedFiles = []; // { file: File, rel: string }；图片项 rel 为 img:<小写文件名>
+  let currentPicked = null; // 当前预览/发布的笔记记录
   let toastTimer = null;
 
   /* ── 工具 ── */
@@ -29,8 +30,11 @@
 
   const esc = (s) =>
     String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-  const fmtDate = (iso) => (iso ? iso.slice(0, 10) : '');
   const fmtKB = (b) => `${(b / 1024).toFixed(0)}KB`;
+  const isMd = (f) => /\.(md|markdown)$/i.test(f.name);
+  const isImg = (f) => f.type.startsWith('image/');
+  const PRIVATE_DIRS = ['实习', '简历', '日常'];
+  const isPrivateRel = (rel) => PRIVATE_DIRS.some((d) => rel === d || rel.startsWith(`${d}/`));
 
   /* ── 主题 ── */
   $('#btn-theme').addEventListener('click', () => {
@@ -40,159 +44,202 @@
   });
   document.documentElement.dataset.theme = localStorage.getItem('admin-theme') || 'dark';
 
-  /* ── 笔记库列表 ── */
-  async function loadNotes(q = '') {
-    noteList.innerHTML = '<div class="loading">加载中…</div>';
-    try {
-      const data = await api(`/api/notes?q=${encodeURIComponent(q)}`);
-      notes = data.notes;
-      $('#vault-path').textContent = data.vault;
-      $('#vault-path').title = data.vault;
-      renderNotes();
-    } catch (e) {
-      noteList.innerHTML = `<div class="empty">加载失败：${esc(e.message)}</div>`;
+  /* ── 文件选择与拖拽 ── */
+  const dropZone = $('#drop-zone');
+  const fileInput = $('#file-input');
+  const folderInput = $('#folder-input');
+
+  $('#btn-pick-files').addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileInput.click();
+  });
+  $('#btn-pick-folder').addEventListener('click', (e) => {
+    e.stopPropagation();
+    folderInput.click();
+  });
+  // 点拖拽区空白 = 选择文件（上面按钮已 stopPropagation，不会双触发）
+  dropZone.addEventListener('click', () => fileInput.click());
+
+  function addFiles(fileList) {
+    const incoming = [...fileList];
+    const mds = incoming.filter(isMd);
+    const imgs = incoming.filter(isImg);
+    const skipped = incoming.length - mds.length - imgs.length;
+    let added = 0;
+
+    for (const f of mds) {
+      const rel = f.webkitRelativePath || f.name;
+      if (!pickedFiles.some((p) => p.rel === rel && p.file.size === f.size)) {
+        pickedFiles.push({ file: f, rel });
+        added++;
+      }
     }
+    for (const img of imgs) {
+      const key = `img:${img.name.toLowerCase()}`;
+      if (!pickedFiles.some((p) => p.rel === key)) {
+        pickedFiles.push({ file: img, rel: key });
+        added++;
+      }
+    }
+    if (skipped > 0) toast(`已忽略 ${skipped} 个非 md/图片文件`);
+    if (added > 0) toast(`已添加 ${added} 个文件`);
+    renderPicked();
   }
 
-  function renderNotes() {
-    if (!notes.length) {
-      noteList.innerHTML = '<div class="empty">没有匹配的笔记</div>';
+  fileInput.addEventListener('change', () => {
+    addFiles(fileInput.files);
+    fileInput.value = '';
+  });
+  folderInput.addEventListener('change', () => {
+    addFiles(folderInput.files);
+    folderInput.value = '';
+  });
+
+  // 拖拽（dragenter/leave 计数嵌套子元素）
+  let dragDepth = 0;
+  dropZone.addEventListener('dragenter', () => {
+    dragDepth++;
+    dropZone.classList.add('is-dragover');
+  });
+  dropZone.addEventListener('dragleave', () => {
+    dragDepth--;
+    if (dragDepth <= 0) {
+      dragDepth = 0;
+      dropZone.classList.remove('is-dragover');
+    }
+  });
+  dropZone.addEventListener('dragover', (e) => e.preventDefault());
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragDepth = 0;
+    dropZone.classList.remove('is-dragover');
+    addFiles(e.dataTransfer.files);
+  });
+
+  /* ── 已选文件列表 ── */
+  function visibleMds() {
+    const q = searchInput.value.trim().toLowerCase();
+    return pickedFiles.filter((p) => !p.rel.startsWith('img:') && (!q || p.rel.toLowerCase().includes(q)));
+  }
+
+  function renderPicked() {
+    const mds = pickedFiles.filter((p) => !p.rel.startsWith('img:'));
+    const imgCount = pickedFiles.length - mds.length;
+    $('#picked-stats').textContent = mds.length ? `${mds.length} 篇笔记 · ${imgCount} 张图片` : '';
+    $('#btn-clear-picked').hidden = !pickedFiles.length;
+
+    const list = visibleMds();
+    if (!list.length) {
+      noteList.innerHTML = pickedFiles.length
+        ? '<div class="empty">没有匹配的笔记</div>'
+        : '<div class="empty">还没有选择文件。选择文件夹上传可按目录自动推导专栏。</div>';
       return;
     }
-    // 按目录分组（listAllNotes 已按路径排序，同目录笔记必然相邻）
-    const groups = [];
-    notes.forEach((n, i) => {
-      const dir = n.rel.includes('/') ? n.rel.slice(0, n.rel.lastIndexOf('/')) : '';
-      let g = groups[groups.length - 1];
-      if (!g || g.dir !== dir) groups.push((g = { dir, items: [] }));
-      g.items.push(i);
-    });
-
-    const folderIcon =
-      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>';
-    const chevron =
-      '<svg class="group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
-
-    noteList.innerHTML = groups
+    noteList.innerHTML = list
       .map(
-        (g, gi) => `
-      <div class="note-group" data-group="${gi}">
-        <div class="group-head" role="button" tabindex="0" aria-expanded="true"
-             title="${esc(g.dir || '库根目录')}">
-          ${folderIcon}
-          <span class="group-name">${esc(g.dir ? g.dir.split('/').join(' / ') : '库根目录')}</span>
-          <span class="group-count">${g.items.length} 篇</span>
-          ${chevron}
+        (p, vi) => `
+      <div class="item" role="listitem" data-idx="${vi}" tabindex="0" title="${esc(p.rel)}">
+        <div class="item-main">
+          <div class="item-title">${esc(p.file.name)}</div>
+          <div class="item-path">${esc(p.rel)} · ${fmtKB(p.file.size)}</div>
         </div>
-        <div class="group-items">
-          ${g.items
-            .map((i) => {
-              const n = notes[i];
-              return `
-          <div class="item" role="listitem" data-idx="${i}" tabindex="0"
-               title="${esc(n.rel)}">
-            <div class="item-main">
-              <div class="item-title">${esc(n.title || n.rel)}</div>
-              <div class="item-sub">${esc(n.excerpt || '')}</div>
-              <div class="item-path">${esc(n.rel.split('/').pop())} · ${fmtKB(n.size)} · ${fmtDate(n.mtime)}</div>
-            </div>
-            <div class="item-actions">
-              <button class="pub-btn" data-preview="${i}">发布</button>
-            </div>
-          </div>`;
-            })
-            .join('')}
+        <div class="item-actions">
+          <button class="pub-btn" data-preview="${vi}">发布</button>
         </div>
       </div>`,
       )
       .join('');
   }
 
+  searchInput.addEventListener('input', renderPicked);
+  $('#btn-clear-picked').addEventListener('click', () => {
+    pickedFiles = [];
+    renderPicked();
+  });
+
   noteList.addEventListener('click', (e) => {
-    // 分组头：折叠/展开该目录
-    const head = e.target.closest('.group-head');
-    if (head) {
-      const collapsed = head.parentElement.classList.toggle('collapsed');
-      head.setAttribute('aria-expanded', String(!collapsed));
-      return;
-    }
     const btn = e.target.closest('[data-preview]');
     if (btn) openPreview(Number(btn.dataset.preview));
   });
   noteList.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter') return;
-    if (e.target.classList.contains('group-head')) {
-      e.target.click();
-      return;
-    }
-    if (e.target.classList.contains('item')) {
+    if (e.key === 'Enter' && e.target.classList.contains('item')) {
       openPreview(Number(e.target.dataset.idx));
     }
   });
 
-  let searchTimer = null;
-  searchInput.addEventListener('input', () => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => loadNotes(searchInput.value.trim()), 250);
-  });
-
-  /* ── 预览 + 发布 ── */
+  /* ── 预览 + 发布（上传制） ── */
   const previewDialog = $('#preview-dialog');
+  const previewPre = $('#preview-content');
+  const editArea = $('#edit-content');
 
   async function openPreview(idx) {
-    const note = notes[idx];
-    if (!note) return;
-    currentRel = note.rel;
-    $('#preview-title').textContent = note.rel;
+    const rec = visibleMds()[idx];
+    if (!rec) return;
+    currentPicked = rec;
+    $('#preview-title').textContent = rec.rel;
     $('#publish-status').textContent = '';
     $('#publish-status').className = 'publish-status';
-    $('#btn-publish').disabled = false;
+    const btn = $('#btn-publish');
+    btn.disabled = false;
+    btn.textContent = '发布';
 
-    // 预填表单
-    $('#f-title').value = note.title || '';
+    // 预填表单（建议值由 preview 接口回填）
+    $('#f-title').value = '';
     $('#f-desc').value = '';
-    $('#f-date').value = fmtDate(note.mtime);
+    $('#f-date').value = new Date().toISOString().slice(0, 10);
     $('#f-series').value = '';
     $('#f-order').value = '';
     $('#f-draft').checked = false;
+    $('#private-hint').hidden = !isPrivateRel(rec.rel);
 
     previewDialog.showModal();
-    const pre = $('#preview-content');
-    pre.textContent = '加载中…';
+    previewPre.hidden = false;
+    editArea.hidden = true;
+    previewPre.textContent = '加载中…';
     try {
-      const { raw } = await api('/api/preview', {
+      const raw = await rec.file.text();
+      const sug = await api('/api/upload/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rel: note.rel }),
+        body: JSON.stringify({ rel: rec.rel, raw }),
       });
-      // 截断超长内容，弹窗里只看头部
-      pre.textContent = raw.length > 6000 ? `${raw.slice(0, 6000)}\n\n…（后文省略，共 ${raw.length} 字符）` : raw;
+      previewPre.textContent = sug.raw;
+      $('#f-title').value = sug.title;
+      $('#f-desc').value = sug.description;
+      $('#f-series').value = sug.series ?? '';
+      $('#f-order').value = sug.order != null ? String(sug.order) : '';
     } catch (e) {
-      pre.textContent = `读取失败：${e.message}`;
+      previewPre.textContent = `读取失败：${e.message}`;
     }
   }
 
   $('#btn-publish').addEventListener('click', async () => {
-    if (!currentRel) return;
+    if (!currentPicked) return;
     const btn = $('#btn-publish');
     btn.disabled = true;
     $('#publish-status').textContent = '';
+
+    const fd = new FormData();
+    fd.append('rel', currentPicked.rel.replace(/\.(md|markdown)$/i, ''));
+    fd.append('title', $('#f-title').value.trim());
+    fd.append('description', $('#f-desc').value.trim());
+    fd.append('series', $('#f-series').value.trim());
+    fd.append('order', $('#f-order').value.trim());
+    fd.append('pubDate', $('#f-date').value);
+    fd.append('draft', String($('#f-draft').checked));
+    fd.append('note', currentPicked.file, currentPicked.file.name);
+    for (const p of pickedFiles) {
+      if (p.rel.startsWith('img:')) fd.append('images', p.file, p.file.name);
+    }
+
     try {
-      const result = await api('/api/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          rel: currentRel,
-          title: $('#f-title').value.trim() || undefined,
-          description: $('#f-desc').value.trim() || undefined,
-          series: $('#f-series').value.trim() || undefined,
-          order: $('#f-order').value.trim() || undefined,
-          pubDate: $('#f-date').value || undefined,
-          draft: $('#f-draft').checked,
-        }),
-      });
+      const result = await api('/api/upload/publish', { method: 'POST', body: fd });
+      let msg = `已发布：${result.title}`;
+      if (result.imageSavedBytes > 0) {
+        msg += `（图片省 ${(result.imageSavedBytes / 1024).toFixed(0)}KB）`;
+      }
       $('#publish-status').textContent = '✓ 已发布';
-      toast(`已发布：${result.title}`, 'ok');
+      toast(msg, 'ok');
       setTimeout(() => previewDialog.close(), 500);
       loadPosts();
     } catch (e) {
@@ -276,18 +323,24 @@
     if (action === 'edit') openEdit(slug);
   });
 
-  /* ── 编辑已发布文章 ── */
+  /* ── 编辑已发布文章（元信息 + 正文） ── */
   async function openEdit(slug) {
-    const { posts } = await api('/api/posts');
-    const post = posts.find((p) => p.slug === slug);
-    if (!post) return;
+    let post;
+    try {
+      post = await api(`/api/posts/${encodeURIComponent(slug)}`);
+    } catch (e) {
+      toast(e.message, 'err');
+      return;
+    }
 
-    currentRel = null;
+    currentPicked = null;
     $('#preview-title').textContent = `编辑 · ${slug}`;
     $('#publish-status').textContent = '';
     $('#publish-status').className = 'publish-status';
-    $('#btn-publish').disabled = false;
-    $('#btn-publish').textContent = '保存';
+    const btn = $('#btn-publish');
+    btn.disabled = false;
+    btn.textContent = '保存';
+    $('#private-hint').hidden = true;
 
     $('#f-title').value = post.title;
     $('#f-desc').value = post.description;
@@ -295,10 +348,14 @@
     $('#f-series').value = post.series || '';
     $('#f-order').value = post.order != null ? String(post.order) : '';
     $('#f-draft').checked = post.draft;
-    $('#preview-content').textContent = '（编辑模式下不显示正文。正文如需修改，请直接编辑 src/content/blog/ 下的 .md 文件。）';
 
-    // 保存走 PATCH
-    $('#btn-publish').onclick = async () => {
+    // 编辑模式：textarea 显示正文
+    previewPre.hidden = true;
+    editArea.hidden = false;
+    editArea.value = post.body;
+
+    // 保存走 PATCH（含正文）
+    btn.onclick = async () => {
       $('#publish-status').textContent = '';
       try {
         await api(`/api/posts/${encodeURIComponent(slug)}`, {
@@ -311,6 +368,7 @@
             order: $('#f-order').value.trim(),
             pubDate: $('#f-date').value,
             draft: $('#f-draft').checked,
+            body: editArea.value,
           }),
         });
         $('#publish-status').textContent = '✓ 已保存';
@@ -328,70 +386,13 @@
 
   // 关闭弹窗时恢复「发布」按钮语义
   previewDialog.addEventListener('close', () => {
-    $('#btn-publish').textContent = '发布';
-    $('#btn-publish').onclick = null;
-    currentRel = null;
-  });
-
-  /* ── 设置 ── */
-  const settingsDialog = $('#settings-dialog');
-  $('#btn-settings').addEventListener('click', () => {
-    $('#s-vault').value = $('#vault-path').textContent;
-    $('#settings-status').textContent = '';
-    settingsDialog.showModal();
-  });
-  $('#btn-save-settings').addEventListener('click', async () => {
-    try {
-      await api('/api/config', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vaultPath: $('#s-vault').value.trim() }),
-      });
-      $('#settings-status').textContent = '✓ 已保存';
-      toast('设置已保存', 'ok');
-      setTimeout(() => settingsDialog.close(), 400);
-      loadNotes(searchInput.value.trim());
-    } catch (e) {
-      $('#settings-status').textContent = e.message;
-      $('#settings-status').className = 'publish-status err';
-    }
-  });
-
-  /* ── 通用关闭 ── */
-  document.querySelectorAll('dialog [data-close]').forEach((btn) =>
-    btn.addEventListener('click', () => btn.closest('dialog').close()),
-  );
-
-  /* ── 发布即上线 ── */
-  $('#btn-deploy').addEventListener('click', async () => {
-    const btn = $('#btn-deploy');
-    try {
-      const { hasRemote, changes } = await api('/api/deploy/status');
-      if (!changes.length) {
-        toast('没有需要推送的变更', 'ok');
-        return;
-      }
-      const msg = hasRemote
-        ? `将提交并推送 ${changes.length} 个内容文件到 GitHub，\nGitHub Actions 会自动构建部署（约 2 分钟）。继续？`
-        : `有 ${changes.length} 个内容文件待提交，但尚未配置远程仓库。\n将先本地提交，配置 remote 后再推送。继续？`;
-      if (!confirm(msg)) return;
-
-      btn.disabled = true;
-      const oldText = btn.innerHTML;
-      btn.textContent = '推送中…';
-      const result = await api('/api/deploy', { method: 'POST' });
-      toast(result.message, 'ok');
-      if (result.committed) loadPosts();
-    } catch (e) {
-      toast(e.message, 'err');
-    } finally {
-      btn.disabled = false;
-      // 恢复按钮（innerHTML 含 svg，需重建）
-      btn.innerHTML = oldText;
-    }
+    const btn = $('#btn-publish');
+    btn.textContent = '发布';
+    btn.onclick = null;
+    currentPicked = null;
   });
 
   /* ── 启动 ── */
-  loadNotes();
+  renderPicked();
   loadPosts();
 })();
