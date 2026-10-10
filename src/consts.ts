@@ -25,5 +25,6 @@ export const EMAIL = { user: '2953997419', domain: 'qq.com' } as const;
 export const NAV_LINKS = [
   { label: '首页', url: '/' },
   { label: '专栏', url: '/series/' },
+  { label: '项目', url: '/projects/' },
   { label: '关于', url: '/about/' },
 ] as const;

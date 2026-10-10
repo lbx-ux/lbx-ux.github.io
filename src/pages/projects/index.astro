@@ -1,0 +1,334 @@
+---
+import { getPublishedPosts } from '@/lib/content';
+import { buildSeriesMap } from '@/lib/series';
+import { PROJECTS } from '@/data/projects';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Icon from '@/components/Icon.astro';
+
+/** 站内专栏索引：专栏名 → { slug, 篇数 }，用于把项目与学习笔记互相链起来 */
+const seriesIndex = new Map(
+  buildSeriesMap(await getPublishedPosts()).map((s) => [s.name, { slug: s.slug, count: s.posts.length }]),
+);
+---
+<BaseLayout
+  title="项目"
+  description="lbx 的 Java 后端项目：物流快运平台 sl-express、高并发本地生活平台 RateHub，附技术栈、核心难点与配套学习笔记。"
+>
+  <div class="container projects-page">
+    <header class="page-head reveal">
+      <p class="page-eyebrow"><Icon name="archive" size={15} /> PROJECTS</p>
+      <h1 class="page-title">我做的<span class="grad-text">项目</span></h1>
+      <p class="page-sub">
+        两个从零独立实现的 Java 后端工程。左边写「解决什么问题」，右边写「本站哪几篇笔记是它的配套」。
+      </p>
+    </header>
+
+    <div class="pj-list">
+      {
+        PROJECTS.map((p) => {
+          const related = p.relatedSeries
+            .map((name) => ({ name, ...seriesIndex.get(name)! }))
+            .filter((s) => s.slug);
+          const relatedCount = related.reduce((n, s) => n + s.count, 0);
+          return (
+            <article class="glass glass-sheen pj-card reveal">
+              <div class="pj-top">
+                <div class="pj-id">
+                  <h2 class="pj-title">{p.title}</h2>
+                  <p class="pj-tagline">{p.tagline}</p>
+                </div>
+                <a class="pj-repo" href={p.repo} rel="noopener me" target="_blank">
+                  <Icon name="github" size={16} />
+                  <span>{p.repoName}</span>
+                </a>
+              </div>
+
+              {p.metrics && p.metrics.length > 0 && (
+                <div class="pj-metrics" role="list">
+                  {p.metrics.map((m) => (
+                    <div class="pj-metric" role="listitem">
+                      <span class="pj-mv">{m.value}</span>
+                      <span class="pj-ml">{m.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div class="pj-stack" role="list" aria-label="技术栈">
+                {p.stack.map((s) => (
+                  <span class="pj-chip" role="listitem">
+                    {s.label}
+                    {s.version && <em>{s.version}</em>}
+                  </span>
+                ))}
+              </div>
+
+              <div class="pj-body">
+                {p.summary.map((para) => (
+                  <p>{para}</p>
+                ))}
+              </div>
+
+              <h3 class="pj-sub">核心难点与做法</h3>
+              <ul class="pj-points" role="list">
+                {p.highlights.map((h) => (
+                  <li>
+                    <strong>{h.title}</strong>
+                    <span>{h.detail}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {related.length > 0 && (
+                <div class="pj-notes">
+                  <span class="pj-notes-label">配套学习笔记 · {relatedCount} 篇</span>
+                  <div class="pj-notes-links">
+                    {related.map((s) => (
+                      <a class="pj-note" href={`/series/${s.slug}/`}>
+                        {s.name}
+                        <span class="pj-note-num">{s.count}</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </article>
+          );
+        })
+      }
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .projects-page {
+    max-width: 960px;
+  }
+  .page-head {
+    margin-bottom: var(--space-5);
+  }
+  .page-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.32em;
+    color: var(--accent);
+    margin: 0 0 12px;
+  }
+  .page-title {
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    font-weight: 700;
+  }
+  .page-sub {
+    margin: 12px 0 0;
+    color: var(--fg-muted);
+  }
+
+  .pj-list {
+    display: grid;
+    gap: 24px;
+  }
+  .pj-card {
+    padding: 28px 30px 30px;
+  }
+
+  .pj-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .pj-id {
+    flex: 1;
+    min-width: 260px;
+  }
+  .pj-title {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .pj-tagline {
+    margin: 8px 0 0;
+    color: var(--fg-muted);
+    font-size: 0.92rem;
+  }
+  .pj-repo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    padding: 9px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    font-size: 0.84rem;
+    font-family: var(--font-mono);
+    color: var(--fg-muted);
+    transition: color var(--tr-fast), border-color var(--tr-fast), transform var(--tr-fast);
+  }
+  .pj-repo:hover {
+    color: var(--accent-strong);
+    border-color: rgba(129, 140, 248, 0.45);
+    transform: translateY(-2px);
+  }
+
+  /* 量化结果 */
+  .pj-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 20px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .pj-metric {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(129, 140, 248, 0.07);
+  }
+  .pj-mv {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent-strong);
+  }
+  .pj-ml {
+    font-size: 0.78rem;
+    color: var(--fg-muted);
+  }
+
+  .pj-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 18px;
+  }
+  .pj-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 9px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    font-size: 0.8rem;
+    color: var(--fg-muted);
+  }
+  .pj-chip em {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-style: normal;
+    color: var(--accent);
+  }
+
+  .pj-body p {
+    margin: 18px 0 0;
+    color: var(--fg-muted);
+    line-height: 1.8;
+  }
+
+  .pj-sub {
+    margin: 24px 0 12px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--fg);
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+  .pj-points {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 14px;
+  }
+  .pj-points li {
+    display: grid;
+    gap: 4px;
+    padding-left: 20px;
+    position: relative;
+  }
+  .pj-points li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: linear-gradient(120deg, var(--aurora-3), var(--aurora-2));
+    box-shadow: 0 0 10px rgba(129, 140, 248, 0.55);
+  }
+  .pj-points strong {
+    font-size: 0.92rem;
+  }
+  .pj-points span {
+    font-size: 0.875rem;
+    color: var(--fg-muted);
+    line-height: 1.75;
+  }
+
+  /* 配套笔记 */
+  .pj-notes {
+    margin-top: 24px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+  .pj-notes-label {
+    display: block;
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    letter-spacing: 0.06em;
+    color: var(--fg-faint);
+    margin-bottom: 10px;
+  }
+  .pj-notes-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pj-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 11px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    font-size: 0.84rem;
+    color: var(--fg-muted);
+    transition: color var(--tr-fast), border-color var(--tr-fast), transform var(--tr-fast);
+  }
+  .pj-note:hover {
+    color: var(--fg);
+    border-color: rgba(129, 140, 248, 0.45);
+    background: var(--glass-bg-hover);
+    transform: translateY(-1px);
+  }
+  .pj-note-num {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 0 5px;
+    border-radius: 6px;
+    background: rgba(129, 140, 248, 0.16);
+    color: var(--accent-strong);
+  }
+
+  @media (max-width: 767px) {
+    .pj-card {
+      padding: 22px 20px 24px;
+    }
+    .pj-repo {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+</style>

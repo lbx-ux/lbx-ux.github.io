@@ -14,6 +14,7 @@
 - **沉浸式阅读**：一键进入无干扰阅读模式，文章 GSAP Flip 动画移至屏幕中央，支持 Esc / 按钮 / 点击遮罩三种退出方式，退出后恢复原滚动位置
 - **全局搜索**：任意页面按 `Ctrl+K`（Mac `⌘K`）呼出命令面板，构建时生成 JSON 索引，客户端加权模糊匹配，零后端
 - **关于页 / 404**：统一的玻璃视觉
+- **项目页**（`/projects`）：从零独立实现的 Java 后端项目，展示技术栈、量化压测结果与核心难点做法，并自动关联站内对应专栏的学习笔记（数据集中在 `src/data/projects.ts`，加项目只改数据）
 - **返回顶部 / 阅读进度条 / 导航栏智能隐藏**
 
 ### 内容与 SEO
@@ -125,6 +126,7 @@ node scripts/admin/server.mjs   # http://127.0.0.1:8799
 │  ├─ consts.ts              # 站点单一配置源（站名 / 作者 / 社交链接）
 │  ├─ content.config.ts      # 文章集合 schema
 │  ├─ content/blog/          # 文章（Markdown）
+│  ├─ data/projects.ts       # 项目展示数据（技术栈 / 难点 / 关联专栏）
 │  ├─ layouts/               # BaseLayout / PostLayout
 │  ├─ components/            # Header / PostCard / Toc / Footer ...
 │  ├─ lib/                   # GSAP 动效编排 / 液态玻璃引擎 / 工具
