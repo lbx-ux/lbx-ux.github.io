@@ -151,6 +151,10 @@ input { font: inherit; color: inherit; }
   max-height: calc(100vh - 220px); overflow-y: auto;
   padding-right: 4px;
 }
+/* 关键：滚动容器里的 flex 子项禁止压缩。
+   .series-group 带 overflow:hidden，其「自动最小尺寸」为 0，
+   否则 10 个分组会被压扁成只剩 padding 的空壳（内容被裁掉且不出现滚动条）。 */
+.note-list > *, .post-list > *, .sg-items > * { flex-shrink: 0; }
 
 /* 上传拖拽区 */
 .drop-zone {
