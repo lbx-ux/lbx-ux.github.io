@@ -289,46 +289,48 @@
     overflow-y: auto;
     flex: 1;
   }
-  .sp-empty {
+  /* 结果条目由脚本 innerHTML 注入，拿不到 Astro 作用域属性，
+     故这些规则必须用 :global()，否则注入的 DOM 全部裸样式。 */
+  :global(.sp-empty) {
     padding: 32px 16px;
     text-align: center;
     color: var(--fg-faint);
     font-size: 0.875rem;
   }
-  .sp-item {
+  :global(.sp-item) {
     padding: 12px 14px;
     border-radius: 14px;
     cursor: pointer;
     display: grid;
     gap: 6px;
   }
-  .sp-item.is-active,
-  .sp-item:hover {
+  :global(.sp-item.is-active),
+  :global(.sp-item:hover) {
     background: var(--glass-bg-hover);
   }
-  .sp-item.is-active {
+  :global(.sp-item.is-active) {
     outline: 1px solid rgba(129, 140, 248, 0.4);
   }
-  .sp-item-head {
+  :global(.sp-item-head) {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: 12px;
   }
-  .sp-title {
+  :global(.sp-title) {
     font-weight: 600;
     font-size: 0.9375rem;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-  .sp-date {
+  :global(.sp-date) {
     font-family: var(--font-mono);
     font-size: 0.7rem;
     color: var(--fg-faint);
     flex-shrink: 0;
   }
-  .sp-desc {
+  :global(.sp-desc) {
     margin: 0;
     font-size: 0.8125rem;
     color: var(--fg-muted);
@@ -337,17 +339,18 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .sp-meta {
+  :global(.sp-meta) {
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
   }
-  .sp-series {
+  :global(.sp-series) {
     padding: 1px 9px;
     border-radius: 999px;
     font-size: 0.6875rem;
     background: rgba(129, 140, 248, 0.16);
     color: var(--accent-strong);
+    width: max-content;
   }
 
   .sp-foot {
