@@ -21,8 +21,8 @@ export interface Project {
   repo: string;
   /** 仓库短名（按钮文案） */
   repoName: string;
-  /** 量化结果，没有就别写 */
-  metrics?: { value: string; label: string }[];
+  /** 量化结果，没有就别写。short 供首页紧凑卡片使用 */
+  metrics?: { value: string; label: string; short?: string }[];
   stack: ProjectStack[];
   highlights: { title: string; detail: string }[];
   /** 站内相关专栏名 */
@@ -102,8 +102,8 @@ export const PROJECTS: Project[] = [
     repo: 'https://github.com/lbx-ux/RateHub',
     repoName: 'lbx-ux/RateHub',
     metrics: [
-      { value: '465.5+ / s', label: '秒杀吞吐（原 250.8）' },
-      { value: '1695 ms', label: 'P90 响应（原 3516 ms）' },
+      { value: '465.5+ QPS', label: '秒杀吞吐（原 250.8）', short: '秒杀吞吐' },
+      { value: '1695 ms', label: 'P90 响应（原 3516 ms）', short: 'P90 响应' },
       { value: '0', label: '超卖 / 漏单' },
     ],
     stack: [

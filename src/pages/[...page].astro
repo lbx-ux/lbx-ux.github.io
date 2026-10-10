@@ -7,6 +7,7 @@ import Pagination from '@/components/Pagination.astro';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import Icon from '@/components/Icon.astro';
 import { SITE_TITLE, SITE_DESCRIPTION, POSTS_PER_PAGE } from '@/consts';
+import { PROJECTS } from '@/data/projects';
 
 export async function getStaticPaths({ paginate }: import('astro').GetStaticPathsOptions) {
   const posts = await getPublishedPosts();
@@ -26,6 +27,10 @@ const allPosts = isFirstPage
   : [];
 const allSeries = isFirstPage ? buildSeriesMap(allPosts) : [];
 const homeSeries = allSeries.slice(0, 4);
+
+// 首页项目区：卡片上显示「关联站内笔记数」，篇数实时取自专栏分组
+const seriesCount = new Map(allSeries.map((s) => [s.name, s.posts.length]));
+const relatedNoteCount = (names: string[]) => names.reduce((n, s) => n + (seriesCount.get(s) ?? 0), 0);
 ---
 <BaseLayout title={SITE_TITLE} description={SITE_DESCRIPTION}>
   {isFirstPage && (
@@ -107,6 +112,41 @@ const homeSeries = allSeries.slice(0, 4);
         </div>
       </section>
     )
+  }
+
+  {
+    isFirstPage &&
+      PROJECTS.length > 0 && (
+        <section class="container projects-section reveal">
+          <div class="section-head">
+            <h2 class="section-title">我的项目</h2>
+            <a class="see-all" href="/projects/">全部项目 →</a>
+          </div>
+          <div class="home-projects-grid" data-stagger>
+            {PROJECTS.map((p) => (
+              <a class="hp-card glass glass-lift" href="/projects/">
+                <div class="hp-head">
+                  <span class="hp-icon"><Icon name="archive" size={16} /></span>
+                  <span class="hp-repo">{p.repoName.split('/')[1]}</span>
+                  <span class="hp-notes">{relatedNoteCount(p.relatedSeries)} 篇配套笔记</span>
+                </div>
+                <h3 class="hp-name">{p.title}</h3>
+                <p class="hp-tag">{p.tagline}</p>
+                {p.metrics && p.metrics.length > 0 && (
+                  <div class="hp-metrics">
+                    {p.metrics.slice(0, 2).map((m) => (
+                      <span class="hp-metric">
+                        <b>{m.value}</b>
+                        <i>{m.short ?? m.label}</i>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </a>
+            ))}
+          </div>
+        </section>
+      )
   }
 </BaseLayout>
 
@@ -311,6 +351,92 @@ const homeSeries = allSeries.slice(0, 4);
     text-overflow: ellipsis;
   }
 
+  /* ── 首页项目区 ── */
+  .projects-section {
+    padding-top: var(--space-7);
+  }
+  .home-projects-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .hp-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px 22px;
+    cursor: pointer;
+  }
+  .hp-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hp-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    color: var(--accent-strong);
+    background: rgba(129, 140, 248, 0.14);
+    flex-shrink: 0;
+  }
+  .hp-repo {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--fg-muted);
+  }
+  .hp-notes {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--fg-faint);
+    white-space: nowrap;
+  }
+  .hp-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+  }
+  .hp-tag {
+    margin: 0;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    color: var(--fg-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .hp-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+  }
+  .hp-metric {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: rgba(129, 140, 248, 0.07);
+  }
+  .hp-metric b {
+    font-family: var(--font-mono);
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--accent-strong);
+  }
+  .hp-metric i {
+    font-style: normal;
+    font-size: 0.72rem;
+    color: var(--fg-faint);
+  }
+
   @media (max-width: 1023px) {
     .home-series-grid {
       grid-template-columns: repeat(2, 1fr);
@@ -320,7 +446,8 @@ const homeSeries = allSeries.slice(0, 4);
     .post-grid {
       grid-template-columns: 1fr;
     }
-    .home-series-grid {
+    .home-series-grid,
+    .home-projects-grid {
       grid-template-columns: 1fr;
     }
     .hero-actions {
