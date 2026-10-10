@@ -4,7 +4,6 @@ description: Redis+Token方案下的强制下线与单设备限制实现指南
 pubDate: 2026-08-25
 series: 登录技术
 order: 5
-sort: 20
 source: 实战/登录技术/4.强制下线.md
 ---
 

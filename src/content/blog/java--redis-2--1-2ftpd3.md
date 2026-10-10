@@ -4,7 +4,6 @@ description: Redis持久化Redis作为一款基于内存的数据库，其最大
 pubDate: 2026-08-23
 series: Redis
 order: 8
-sort: 31
 source: Java后端/数据库/Redis/2.高级/1. 持久化.md
 ---
 

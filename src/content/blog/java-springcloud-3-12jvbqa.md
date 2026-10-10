@@ -3,7 +3,7 @@ title: 3.远程调用
 description: 一.RestTemplateRestTemplate是Spring提供的同步，异步HTTP客户端，它封装了HTTP请求的细节，让您能用Java方法风格调用RESTful接口，并自动将响应转换成对象。1
 pubDate: 2026-09-01
 series: SpringCloud
-order: 3
+order: 6
 draft: true
 source: Java后端/SpringCloud/3.服务调用.md
 ---

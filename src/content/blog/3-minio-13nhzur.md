@@ -3,8 +3,7 @@ title: 3.MinIo
 description: xml<dependency<groupIdio.minio</groupId<artifactIdminio</artifactId<version8.6.0</version</dependenc
 pubDate: 2026-09-02
 series: 存储技术
-order: 3
-sort: 0
+order: 1
 source: 实战/存储技术/3.MinIo.md
 ---
 

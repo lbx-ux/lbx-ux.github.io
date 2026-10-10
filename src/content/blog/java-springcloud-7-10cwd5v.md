@@ -3,8 +3,7 @@ title: 7.分布式事务
 description: 首先我们看看项目中的下单业务整体流程：
 pubDate: 2026-09-01
 series: SpringCloud
-order: 7
-sort: 7
+order: 5
 source: Java后端/SpringCloud/7.分布式事务.md
 ---
 

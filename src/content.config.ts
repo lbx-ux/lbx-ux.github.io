@@ -9,10 +9,8 @@ const blog = defineCollection({
     pubDate: z.coerce.date(),
     /** 所属专栏（如「Redis 基础」），发布后台按 source 路径自动推导 */
     series: z.string().optional(),
-    /** 专栏内序号（中文序号或文件名编号推导），缺失时按 pubDate 排 */
+    /** 专栏内序号（发布后台拖拽排序 / 上传路径自动推导），缺失时按 pubDate 排 */
     order: z.number().optional(),
-    /** 全局展示序（发布后台手动排序，越小越靠前）；主页按它排序，缺失时按 pubDate 兜底 */
-    sort: z.number().optional(),
     /** 草稿：构建时排除，dev 模式可见 */
     draft: z.boolean().default(false),
   }),

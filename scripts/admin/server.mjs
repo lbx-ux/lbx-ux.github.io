@@ -7,7 +7,8 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  loadConfig, publishUploaded, getPost, listPosts, updatePostMeta, deletePost, reorderPosts,
+  loadConfig, publishUploaded, getPost, listPosts, updatePostMeta, deletePost, reorderGroups,
+  loadSeriesOrder,
   parseFrontmatter, cleanObsidianSyntax, extractDescription, deriveSeries, deriveOrder, ROOT,
 } from './shared.mjs';
 
@@ -177,18 +178,20 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, rest);
     }
 
-    /* 已发布列表 */
+    /* 已发布列表（含专栏展示顺序，前端按专栏分组渲染） */
     if (pathname === '/api/posts' && req.method === 'GET') {
-      return json(res, 200, { posts: listPosts() });
+      return json(res, 200, { posts: listPosts(), seriesOrder: loadSeriesOrder() });
     }
 
-    /* 手动排序：body = { slugs: [...] }，顺序即主页展示顺序 */
+    /* 层级排序：body = { groups: [{ series, slugs }] }
+       组顺序 = 专栏展示顺序，组内顺序 = 专栏内序号，两者共同决定主页顺序 */
     if (pathname === '/api/posts/reorder' && req.method === 'POST') {
-      const { slugs } = await readJsonBody(req);
-      if (!Array.isArray(slugs) || !slugs.every((s) => typeof s === 'string')) {
-        return json(res, 400, { error: 'slugs 必须是字符串数组' });
+      const { groups } = await readJsonBody(req);
+      if (!Array.isArray(groups) || groups.some((g) => !g || typeof g !== 'object')) {
+        return json(res, 400, { error: 'groups 格式错误' });
       }
-      return json(res, 200, reorderPosts(slugs));
+      const result = reorderGroups(groups);
+      return result.error ? json(res, 400, result) : json(res, 200, result);
     }
 
     /* 单篇读取（编辑弹窗） */

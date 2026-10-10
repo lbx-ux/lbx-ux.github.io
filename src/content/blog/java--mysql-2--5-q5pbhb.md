@@ -4,7 +4,6 @@ description: 一.全局锁全局锁（GlobalLock）是对整个MySQL数据库实
 pubDate: 2026-08-20
 series: MySQL
 order: 12
-sort: 46
 source: Java后端/数据库/Mysql/2. 进阶/5.锁.md
 ---
 

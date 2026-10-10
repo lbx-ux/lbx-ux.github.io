@@ -4,7 +4,6 @@ description: Redis分片集群Redis分片集群（RedisCluster）是Redis官方�
 pubDate: 2026-08-23
 series: Redis
 order: 10
-sort: 33
 source: Java后端/数据库/Redis/2.高级/3. 分片集群.md
 ---
 

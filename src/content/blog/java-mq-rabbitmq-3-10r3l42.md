@@ -4,7 +4,6 @@ description: RabbitMQ&SpringAMQP学习总结
 pubDate: 2026-08-17
 series: RabbitMQ
 order: 3
-sort: 50
 source: Java后端/MQ/RabbitMQ/3.总结.md
 ---
 

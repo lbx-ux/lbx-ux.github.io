@@ -3,8 +3,7 @@ title: 5.配置中心
 description: 配置中心到目前为止我们已经解决了微服务相关的几个问题：微服务远程调用微服务注册、发现微服务请求路由、负载均衡微服务登录用户信息传递不过，现在依然还有几个问题需要解决：网关路由在配置文件中写死了，如果变
 pubDate: 2026-09-01
 series: SpringCloud
-order: 5
-sort: 5
+order: 3
 source: Java后端/SpringCloud/5.配置中心.md
 ---
 

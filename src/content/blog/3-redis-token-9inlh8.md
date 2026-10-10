@@ -4,7 +4,6 @@ description: Redis+Token分布式登录状态共享技术解析
 pubDate: 2026-08-25
 series: 登录技术
 order: 4
-sort: 19
 source: 实战/登录技术/3.Redis+token.md
 ---
 

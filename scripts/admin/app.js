@@ -247,22 +247,60 @@
     }
   });
 
-  /* ── 已发布列表 ── */
+  /* ── 已发布列表（按专栏分组，两级拖拽） ── */
+  let seriesOrder = []; // 专栏展示顺序（后端 series-order.json）
+
   async function loadPosts() {
     postList.innerHTML = '<div class="loading">加载中…</div>';
     try {
-      const { posts } = await api('/api/posts');
+      const { posts, seriesOrder: order } = await api('/api/posts');
+      seriesOrder = order ?? [];
       $('#post-count').textContent = posts.length;
       if (!posts.length) {
         postList.innerHTML = '<div class="empty">还没有发布任何文章</div>';
         return;
       }
-      postList.innerHTML = posts
-        .map(
-          (p, i) => `
+      postList.innerHTML = groupPosts(posts).map(groupHtml).join('');
+    } catch (e) {
+      postList.innerHTML = `<div class="empty">加载失败：${esc(e.message)}</div>`;
+    }
+  }
+
+  /** 按专栏分组：已登记专栏按 seriesOrder 排，未登记/无专栏的跟在后面 */
+  function groupPosts(posts) {
+    const map = new Map();
+    for (const p of posts) {
+      const key = p.series || '';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(p);
+    }
+    const known = seriesOrder.filter((s) => map.has(s));
+    const rest = [...map.keys()].filter((s) => !known.includes(s));
+    return [...known, ...rest].map((series) => ({ series, items: map.get(series) }));
+  }
+
+  function groupHtml(g) {
+    return `
+      <section class="series-group" data-series="${esc(g.series)}">
+        <div class="sg-head" draggable="true" title="拖动调整专栏顺序">
+          <span class="sg-grip" aria-hidden="true">
+            <svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.7"/><circle cx="15" cy="5" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="19" r="1.7"/><circle cx="15" cy="19" r="1.7"/></svg>
+          </span>
+          <span class="sg-name">${esc(g.series || '未分类')}</span>
+          <span class="sg-count">${g.items.length} 篇</span>
+          <button class="sg-toggle" data-toggle type="button" aria-label="折叠或展开该专栏" title="折叠 / 展开">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        </div>
+        <div class="sg-items">${g.items.map(postItemHtml).join('')}</div>
+      </section>`;
+  }
+
+  function postItemHtml(p, i) {
+    return `
         <div class="item post-item" role="listitem" data-slug="${esc(p.slug)}">
-          <span class="pos-num" title="主页展示位置">${i + 1}</span>
-          <div class="drag-handle" draggable="true" title="拖动调整顺序" aria-label="拖动调整顺序">
+          <span class="pos-num" title="专栏内位置">${i + 1}</span>
+          <div class="drag-handle" draggable="true" title="拖动调整专栏内顺序" aria-label="拖动调整顺序">
             <svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="5" r="1.7"/><circle cx="15" cy="5" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="19" r="1.7"/><circle cx="15" cy="19" r="1.7"/></svg>
           </div>
           <div class="item-main">
@@ -270,26 +308,24 @@
               ${p.draft ? '<span class="draft-badge">草稿</span>' : ''}${esc(p.title)}
             </div>
             <div class="item-sub item-desc">${esc(p.description || '')}</div>
-            <div class="item-sub">
-              ${p.series ? `<span class="tag series-tag">${esc(p.series)}${p.order != null ? ` · ${esc(String(p.order))}` : ''}</span>` : ''}
-            </div>
           </div>
           <div class="item-actions">
             ${p.draft ? `<button class="act-btn" data-action="publish-now" data-slug="${esc(p.slug)}">转正</button>` : `<button class="act-btn" data-action="unpublish" data-slug="${esc(p.slug)}">下架</button>`}
             <button class="act-btn" data-action="edit" data-slug="${esc(p.slug)}">编辑</button>
             <button class="act-btn danger" data-action="delete" data-slug="${esc(p.slug)}">删除</button>
           </div>
-        </div>`,
-        )
-        .join('');
-    } catch (e) {
-      postList.innerHTML = `<div class="empty">加载失败：${esc(e.message)}</div>`;
-    }
+        </div>`;
   }
 
   $('#btn-refresh-posts').addEventListener('click', loadPosts);
 
   postList.addEventListener('click', async (e) => {
+    // 专栏折叠
+    const toggle = e.target.closest('[data-toggle]');
+    if (toggle) {
+      toggle.closest('.series-group').classList.toggle('collapsed');
+      return;
+    }
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const { action, slug } = btn.dataset;
@@ -324,70 +360,111 @@
     if (action === 'edit') openEdit(slug);
   });
 
-  /* ── 拖拽排序（HTML5 原生 DnD，从手柄拖动整行） ── */
-  let dragSlug = null; // 正在拖动的文章 slug
+  /* ── 拖拽排序：文章在专栏内拖、专栏整体拖标题栏 ── */
+  let drag = null; // { type: 'post' | 'series', el: HTMLElement, series: string }
+
+  function clearDragMarks() {
+    postList.querySelectorAll('.is-dragging, .drop-above, .drop-below').forEach((el) =>
+      el.classList.remove('is-dragging', 'drop-above', 'drop-below'),
+    );
+  }
+
+  /** 从当前 DOM 读出分组顺序（提交给后端） */
+  function readGroups() {
+    return [...postList.querySelectorAll('.series-group')].map((g) => ({
+      series: g.dataset.series,
+      slugs: [...g.querySelectorAll('.item')].map((el) => el.dataset.slug),
+    }));
+  }
 
   postList.addEventListener('dragstart', (e) => {
     const handle = e.target.closest('.drag-handle');
-    if (!handle) {
-      e.preventDefault(); // 只允许从手柄发起拖动
+    const head = e.target.closest('.sg-head');
+    if (handle) {
+      const item = handle.closest('.item');
+      drag = { type: 'post', el: item, series: item.closest('.series-group').dataset.series };
+      item.classList.add('is-dragging');
+    } else if (head) {
+      const group = head.closest('.series-group');
+      drag = { type: 'series', el: group, series: group.dataset.series };
+      group.classList.add('is-dragging');
+    } else {
+      e.preventDefault(); // 其余区域不允许拖动
       return;
     }
-    const item = handle.closest('.item');
-    dragSlug = item.dataset.slug;
-    item.classList.add('is-dragging');
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', dragSlug); // Firefox 需要非空 data 才启动拖拽
-  });
-
-  postList.addEventListener('dragend', () => {
-    dragSlug = null;
-    postList.querySelectorAll('.item').forEach((el) => el.classList.remove('is-dragging', 'drop-above', 'drop-below'));
+    e.dataTransfer.setData('text/plain', drag.series || drag.el.dataset.slug || ''); // Firefox 需非空 data
   });
 
   postList.addEventListener('dragover', (e) => {
-    if (!dragSlug) return;
-    e.preventDefault(); // 允许放置
+    if (!drag) return;
+    e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    postList.querySelectorAll('.drop-above, .drop-below').forEach((el) => el.classList.remove('drop-above', 'drop-below'));
+
+    if (drag.type === 'series') {
+      const overGroup = e.target.closest('.series-group');
+      if (!overGroup || overGroup === drag.el) return;
+      const rect = overGroup.querySelector('.sg-head').getBoundingClientRect();
+      overGroup.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drop-above' : 'drop-below');
+      return;
+    }
+
     const overItem = e.target.closest('.item');
-    postList.querySelectorAll('.item').forEach((el) => el.classList.remove('drop-above', 'drop-below'));
-    if (!overItem || overItem.dataset.slug === dragSlug) return;
-    // 指针在上半部 → 将插到它前面；下半部 → 插到它后面
+    if (!overItem || overItem === drag.el) return;
+    // 只允许同专栏内排序（跨专栏改归属请用「编辑」改专栏名）
+    if (overItem.closest('.series-group').dataset.series !== drag.series) return;
     const rect = overItem.getBoundingClientRect();
-    const above = e.clientY < rect.top + rect.height / 2;
-    overItem.classList.add(above ? 'drop-above' : 'drop-below');
+    overItem.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drop-above' : 'drop-below');
   });
 
   postList.addEventListener('drop', async (e) => {
     e.preventDefault();
-    if (!dragSlug) return;
-    const overItem = e.target.closest('.item');
-    if (!overItem || overItem.dataset.slug === dragSlug) return;
-    const rect = overItem.getBoundingClientRect();
-    const above = e.clientY < rect.top + rect.height / 2;
-    const targetSlug = overItem.dataset.slug;
+    if (!drag) return;
+    let moved = false;
 
-    // 先重排 DOM（即时反馈），成功后不整表刷新，避免打断继续拖动
-    const dragItem = postList.querySelector(`[data-slug="${CSS.escape(dragSlug)}"]`);
-    dragItem?.classList.remove('is-dragging');
-    if (dragItem) {
-      if (above) overItem.parentNode.insertBefore(dragItem, overItem);
-      else overItem.parentNode.insertBefore(dragItem, overItem.nextSibling);
+    if (drag.type === 'series') {
+      const overGroup = e.target.closest('.series-group');
+      if (overGroup && overGroup !== drag.el) {
+        const rect = overGroup.querySelector('.sg-head').getBoundingClientRect();
+        const above = e.clientY < rect.top + rect.height / 2;
+        postList.insertBefore(drag.el, above ? overGroup : overGroup.nextSibling);
+        moved = true;
+      }
+    } else {
+      const overItem = e.target.closest('.item');
+      if (
+        overItem && overItem !== drag.el &&
+        overItem.closest('.series-group').dataset.series === drag.series
+      ) {
+        const rect = overItem.getBoundingClientRect();
+        const above = e.clientY < rect.top + rect.height / 2;
+        overItem.parentNode.insertBefore(drag.el, above ? overItem : overItem.nextSibling);
+        moved = true;
+      }
     }
 
-    // 按新 DOM 顺序提交
-    const slugs = [...postList.querySelectorAll('.item')].map((el) => el.dataset.slug);
+    drag = null;
+    clearDragMarks();
+    if (!moved) return;
+
     try {
       await api('/api/posts/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slugs }),
+        body: JSON.stringify({ groups: readGroups() }),
       });
       toast('顺序已保存', 'ok');
+      await loadPosts(); // 重新拉取：刷新组内序号与专栏顺序
     } catch (err) {
       toast(err.message, 'err');
       loadPosts(); // 失败回滚到服务器顺序
     }
+  });
+
+  postList.addEventListener('dragend', () => {
+    drag = null;
+    clearDragMarks();
   });
 
   /* ── 编辑已发布文章（元信息 + 正文） ── */

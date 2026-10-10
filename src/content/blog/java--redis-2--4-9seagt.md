@@ -4,7 +4,6 @@ description: 1.用户空间和内核态空间
 pubDate: 2026-08-23
 series: Redis
 order: 11
-sort: 34
 source: Java后端/数据库/Redis/2.高级/4. 网络模型.md
 ---
 

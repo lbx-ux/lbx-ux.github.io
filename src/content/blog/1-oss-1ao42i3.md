@@ -3,8 +3,7 @@ title: 1.阿里OSS
 description: 阿里云对象存储OSS（ObjectStorageService），是一款海量、安全、低成本、高可靠的云存储服务。使用OSS，您可以通过网络随时存储和调用包括文本、图片、音频和视频等在内的各种文件。
 pubDate: 2026-09-02
 series: 存储技术
-order: 1
-sort: 2
+order: 2
 source: 实战/存储技术/1.阿里OSS.md
 ---
 

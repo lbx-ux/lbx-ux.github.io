@@ -281,25 +281,13 @@ export function buildPostFromRaw({ rel, raw, images, overrides = {}, cfg = loadC
   const draft = overrides.draft === true || overrides.draft === 'true' || fm.draft === 'true';
 
   const series = overrides.series?.trim() || deriveSeries(rel, cfg);
-  // 专栏内序号：手动填写优先，否则按同系列 source 路径自然序推导
-  const order =
+  // 专栏内位置：手动填写优先 → 按 source 路径自然序推导 → 兜底排到该组末尾
+  let order =
     overrides.order?.trim() !== '' && !Number.isNaN(Number(overrides.order))
       ? Number(overrides.order)
       : deriveOrder(rel, series, cfg);
-
-  // 全局展示序：新文章排到主页最前（比现有最小 sort 再小 1；无 sort 文章时从 0 起）
-  let minSort = null;
-  try {
-    for (const f of fs.readdirSync(path.join(ROOT, cfg.blogDir)).filter((x) => x.endsWith('.md'))) {
-      const { meta } = parseFrontmatter(fs.readFileSync(path.join(ROOT, cfg.blogDir, f), 'utf-8'));
-      if (meta.sort != null && !Number.isNaN(Number(meta.sort))) {
-        minSort = minSort == null ? Number(meta.sort) : Math.min(minSort, Number(meta.sort));
-      }
-    }
-  } catch {
-    /* 目录不存在则从 0 起 */
-  }
-  const sort = minSort == null ? 0 : minSort - 1;
+  // 后台拖拽过顺序后，推导值可能与既有序号撞号：撞了就排到该组末尾
+  if (order == null || orderTakenInGroup(order, series, cfg)) order = maxOrderInGroup(series, cfg) + 1;
 
   const frontmatterLines = [
     '---',
@@ -307,9 +295,9 @@ export function buildPostFromRaw({ rel, raw, images, overrides = {}, cfg = loadC
     `description: ${description}`,
     `pubDate: ${pubDate}`,
     ...(series ? [`series: ${series}`] : []),
-    ...(series && order != null ? [`order: ${order}`] : []),
-    // 全局展示序：主页按它升序；后台手动排序会重写为 0..N-1
-    ...(draft ? ['draft: true'] : [`sort: ${sort}`]),
+    // 专栏内序号（主页与专栏页按 专栏顺序 → order 排）
+    ...(order != null ? [`order: ${order}`] : []),
+    ...(draft ? ['draft: true'] : []),
     `source: ${rel}`,
     '---',
   ];
@@ -399,7 +387,7 @@ export async function optimizeCopiedImages(post, cfg = loadConfig()) {
   return { ...post, content, imageSavedBytes: saved, imageRenamed: renames.length };
 }
 
-/** 转换上传内容 + 图片压缩 + 写入博客目录 */
+/** 转换上传内容 + 图片压缩 + 写入博客目录；新专栏自动登记进专栏顺序表 */
 export async function publishUploaded({ rel, raw, images, overrides = {}, cfg = loadConfig() }) {
   let post = buildPostFromRaw({ rel, raw, images, overrides, cfg });
   if (post.error) return post;
@@ -407,7 +395,50 @@ export async function publishUploaded({ rel, raw, images, overrides = {}, cfg = 
   const dir = path.join(ROOT, cfg.blogDir);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, post.file), post.content, 'utf-8');
+  const series = parseFrontmatter(post.content).meta.series;
+  if (series && !loadSeriesOrder().includes(series)) {
+    saveSeriesOrder([...loadSeriesOrder(), series]);
+  }
   return post;
+}
+
+/* ── 专栏顺序（层级排序的上层）─────────────────────────── */
+const SERIES_ORDER_FILE = path.join(ROOT, 'src/content/series-order.json');
+
+/** 读专栏展示顺序；文件缺失/损坏时返回空数组（站点侧按未登记处理） */
+export function loadSeriesOrder() {
+  try {
+    const list = JSON.parse(fs.readFileSync(SERIES_ORDER_FILE, 'utf-8'));
+    return Array.isArray(list) ? list.filter((s) => typeof s === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/** 写专栏展示顺序（保留未出现在 list 里的既有专栏，避免丢条目） */
+export function saveSeriesOrder(list) {
+  const names = list.filter((s) => typeof s === 'string' && s);
+  const existing = loadSeriesOrder().filter((s) => !names.includes(s));
+  fs.mkdirSync(path.dirname(SERIES_ORDER_FILE), { recursive: true });
+  fs.writeFileSync(SERIES_ORDER_FILE, JSON.stringify([...names, ...existing], null, 2) + '\n', 'utf-8');
+  return [...names, ...existing];
+}
+
+/** 某分组（专栏名 / 空串=未分类）内当前最大 order，用于新文章排到组尾 */
+export function maxOrderInGroup(series, cfg = loadConfig()) {
+  let max = 0;
+  for (const p of listPosts(cfg)) {
+    if ((p.series || '') !== (series || '')) continue;
+    if (p.order != null && p.order > max) max = p.order;
+  }
+  return max;
+}
+
+/** 该分组内 order 是否已被占用（拖拽重排后推导序号可能撞号） */
+function orderTakenInGroup(order, series, cfg = loadConfig()) {
+  return listPosts(cfg).some(
+    (p) => (p.series || '') === (series || '') && p.order === order,
+  );
 }
 
 /* ── 已发布管理 ───────────────────────────────────────── */
@@ -427,16 +458,21 @@ export function listPosts(cfg = loadConfig()) {
         pubDate: meta.pubdate ?? '',
         series: meta.series ?? null,
         order: meta.order != null ? Number(meta.order) : null,
-        sort: meta.sort != null && !Number.isNaN(Number(meta.sort)) ? Number(meta.sort) : null,
         draft: meta.draft === 'true',
         source: meta.source ?? null,
       };
     })
-    // 后台列表：手动排序（sort 升序在前），无 sort 的按 pubDate 倒序排在后面
+    // 后台列表：按专栏顺序分组、组内按 order；未登记专栏排最后（前端渲染分组用）
     .sort((a, b) => {
-      if (a.sort != null && b.sort != null) return a.sort - b.sort;
-      if (a.sort != null) return -1;
-      if (b.sort != null) return 1;
+      const order = loadSeriesOrder();
+      const ra = order.indexOf(a.series ?? '');
+      const rb = order.indexOf(b.series ?? '');
+      const va = ra === -1 ? order.length : ra;
+      const vb = rb === -1 ? order.length : rb;
+      if (va !== vb) return va - vb;
+      const oa = a.order ?? Number.MAX_SAFE_INTEGER;
+      const ob = b.order ?? Number.MAX_SAFE_INTEGER;
+      if (oa !== ob) return oa - ob;
       return (b.pubDate || '').localeCompare(a.pubDate || '');
     });
 }
@@ -479,8 +515,7 @@ export function updatePostMeta(slug, patch, cfg = loadConfig()) {
     ...(description ? [`description: ${description}`] : []),
     ...(pubDate ? [`pubDate: ${pubDate}`] : []),
     ...(series ? [`series: ${series}`] : []),
-    ...(series && order != null ? [`order: ${order}`] : []),
-    ...(meta.sort != null ? [`sort: ${meta.sort}`] : []),
+    ...(order != null ? [`order: ${order}`] : []),
     ...(draft ? ['draft: true'] : []),
     ...(meta.source ? [`source: ${meta.source}`] : []),
     '---',
@@ -490,45 +525,28 @@ export function updatePostMeta(slug, patch, cfg = loadConfig()) {
 }
 
 /**
- * 后台手动排序：按传入 slug 顺序把所有文章的 sort 重写为 0..N-1。
- * slugs 数组即前端展示顺序；不在列表中的文章排到最后（保持相对顺序）。
+ * 后台层级排序：groups = [{ series, slugs }]
+ * —— 数组顺序即专栏展示顺序（写入 src/content/series-order.json），
+ * —— 组内 slugs 顺序即专栏内顺序（重写各文章 order 为 1..N）。
+ * series 为空串表示「未分类」组，不写入专栏顺序表。
  */
-export function reorderPosts(slugs, cfg = loadConfig()) {
-  const dir = path.join(ROOT, cfg.blogDir);
-  const list = listPosts(cfg);
-  const rest = list.filter((p) => !slugs.includes(p.slug));
-  const finalOrder = [...slugs, ...rest.map((p) => p.slug)];
-  finalOrder.forEach((slug, i) => {
-    const file = path.join(dir, `${slug}.md`);
-    if (!fs.existsSync(file)) return;
-    const { meta, body } = parseFrontmatter(fs.readFileSync(file, 'utf-8'));
-    const lines = body.startsWith('\n') || body === ''
-      ? [`sort: ${i}`, ...body.split('\n')]
-      : [`sort: ${i}`, '', ...body.split('\n')];
-    fs.writeFileSync(file, frontmatterFrom(meta, i) + '\n\n' + body.replace(/^\r?\n\r?\n/, ''), 'utf-8');
-  });
-  return { ok: true, count: finalOrder.length };
-}
-
-/** 从 meta 对象 + 指定 sort 重建 frontmatter 文本（reorderPosts 用） */
-function frontmatterFrom(meta, sort) {
-  const title = meta.title ?? '';
-  const description = meta.description ?? '';
-  const pubDate = meta.pubdate ?? '';
-  const series = meta.series ?? '';
-  const order = meta.order ?? null;
-  const draft = meta.draft === 'true';
-  return [
-    '---',
-    `title: ${title}`,
-    ...(description ? [`description: ${description}`] : []),
-    ...(pubDate ? [`pubDate: ${pubDate}`] : []),
-    ...(series ? [`series: ${series}`] : []),
-    ...(series && order != null ? [`order: ${order}`] : []),
-    ...(draft ? ['draft: true'] : [`sort: ${sort}`]),
-    ...(meta.source ? [`source: ${meta.source}`] : []),
-    '---',
-  ].join('\n');
+export function reorderGroups(groups, cfg = loadConfig()) {
+  if (!Array.isArray(groups)) return { error: 'groups 必须是数组' };
+  const current = new Map(listPosts(cfg).map((p) => [p.slug, p.order]));
+  const names = [];
+  let changed = 0;
+  for (const g of groups) {
+    const series = typeof g.series === 'string' ? g.series.trim() : '';
+    if (series) names.push(series);
+    if (!Array.isArray(g.slugs)) continue;
+    g.slugs.forEach((slug, i) => {
+      if (current.get(slug) === i + 1) return; // order 未变，跳过写盘
+      const r = updatePostMeta(slug, { order: i + 1 }, cfg);
+      if (!r.error) changed++;
+    });
+  }
+  saveSeriesOrder(names);
+  return { ok: true, changed };
 }
 
 export function deletePost(slug, cfg = loadConfig()) {

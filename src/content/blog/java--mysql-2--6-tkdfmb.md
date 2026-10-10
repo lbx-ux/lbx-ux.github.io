@@ -4,7 +4,6 @@ description: 维度Binlog（二进制日志）RedoLog（重做日志）UndoLog�
 pubDate: 2026-08-20
 series: MySQL
 order: 13
-sort: 47
 source: Java后端/数据库/Mysql/2. 进阶/6.日志.md
 ---
 

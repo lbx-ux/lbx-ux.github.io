@@ -4,7 +4,6 @@ description: JWT全称JSONWebToken（官网：https://jwt.io/），定义了一�
 pubDate: 2026-08-25
 series: 登录技术
 order: 2
-sort: 17
 source: 实战/登录技术/1.JWT令牌.md
 ---
 

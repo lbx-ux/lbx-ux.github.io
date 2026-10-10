@@ -3,8 +3,7 @@ title: 6.服务容错与降级
 description: 在微服务远程调用的过程中，还存在几个问题需要解决。首先是业务健壮性问题：例如在之前的查询购物车列表业务中，购物车服务需要查询最新的商品信息，与购物车数据做对比，提醒用户。大家设想一下，如果商品服务查询
 pubDate: 2026-09-01
 series: SpringCloud
-order: 6
-sort: 6
+order: 4
 source: Java后端/SpringCloud/6.服务容错与降级.md
 ---
 

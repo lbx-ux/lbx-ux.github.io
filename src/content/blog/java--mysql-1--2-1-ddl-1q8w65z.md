@@ -4,7 +4,6 @@ description: DataDefinitionLanguage,数据定义语言,用来定义数据库对�
 pubDate: 2026-08-20
 series: MySQL
 order: 2
-sort: 36
 source: Java后端/数据库/Mysql/1. 基础/2.1.DDL.md
 ---
 

@@ -4,7 +4,6 @@ description: 一.Redis缓存Redis作为缓存（Cache）是它在实际项目中
 pubDate: 2026-08-23
 series: Redis
 order: 6
-sort: 29
 source: Java后端/数据库/Redis/1.基础/5. Redis缓存.md
 ---
 

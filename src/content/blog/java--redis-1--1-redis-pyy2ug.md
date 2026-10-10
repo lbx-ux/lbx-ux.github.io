@@ -4,7 +4,6 @@ description: 一.SpringDataRedis
 pubDate: 2026-08-23
 series: Redis
 order: 1
-sort: 24
 source: Java后端/数据库/Redis/1.基础/1. Redis.md
 ---
 

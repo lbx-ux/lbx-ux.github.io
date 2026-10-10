@@ -4,7 +4,6 @@ description: 1.SpringSpring是一个开源的Java基础开发框架，核心目�
 pubDate: 2026-08-24
 series: Spring
 order: 1
-sort: 21
 source: Java后端/SSM/Spring/1.Spring家族.md
 ---
 

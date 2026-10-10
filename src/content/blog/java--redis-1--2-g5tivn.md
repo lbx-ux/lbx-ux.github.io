@@ -4,7 +4,6 @@ description: 一.BitMap1.BitMap介绍我们按月来统计用户签到信息，�
 pubDate: 2026-08-23
 series: Redis
 order: 2
-sort: 25
 source: Java后端/数据库/Redis/1.基础/2. 特殊类型.md
 ---
 

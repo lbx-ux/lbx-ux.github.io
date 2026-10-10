@@ -4,7 +4,6 @@ description: RabbitMQ 消息可靠性全链路方案：生产者确认与重试�
 pubDate: 2026-08-17
 series: RabbitMQ
 order: 2
-sort: 49
 source: Java后端/MQ/RabbitMQ/2.MQ高级.md
 ---
 

@@ -4,7 +4,6 @@ description: 在SpringBoot中实现邮箱验证码登录，最标准的方案是
 pubDate: 2026-07-01
 series: 验证码
 order: 1
-sort: 51
 source: 实战/验证码/1.邮箱验证码.md
 ---
 

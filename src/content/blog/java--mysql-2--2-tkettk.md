@@ -4,7 +4,6 @@ description: 一.介绍索引（index）是帮助MySQL高效获取数据的数�
 pubDate: 2026-08-20
 series: MySQL
 order: 9
-sort: 43
 source: Java后端/数据库/Mysql/2. 进阶/2.索引.md
 ---
 

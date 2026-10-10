@@ -4,7 +4,6 @@ description: 1.IOC，DI，Bean在Spring框架中，IoC（控制反转）、DI（
 pubDate: 2026-08-24
 series: Spring
 order: 3
-sort: 23
 source: Java后端/SSM/Spring/3.Bean.md
 ---
 

@@ -1,22 +1,28 @@
 /**
- * 内容工具：文章集合查询（时间倒序、草稿过滤）、相关文章、封面占位色。
+ * 内容工具：文章集合查询（专栏层级排序、草稿过滤）、相关文章、封面占位色。
  * 所有页面共用，保证列表行为一致。
  */
 import { getCollection, type CollectionEntry } from 'astro:content';
+import { seriesRank } from '@/lib/series';
 
 export type Post = CollectionEntry<'blog'> & { readingMinutes: number };
 
-/** 拉取全部已发布文章（排除 draft）：有 sort 按后台手动排序，否则按 pubDate 倒序 */
+/**
+ * 拉取全部已发布文章（排除 draft），顺序 = 发布后台拖拽出的层级排序：
+ * 专栏顺序（series-order.json）→ 专栏内 order → pubDate 倒序兜底。
+ */
 export async function getPublishedPosts(): Promise<Post[]> {
   const posts = await getCollection('blog', ({ data }) => !data.draft);
   return posts
     .sort((a, b) => {
-      const sa = a.data.sort;
-      const sb = b.data.sort;
-      // 都有 sort：升序；只有一边有：有 sort 的靠前；都没有：pubDate 倒序兜底
-      if (sa != null && sb != null) return sa - sb;
-      if (sa != null) return -1;
-      if (sb != null) return 1;
+      const ra = seriesRank(a.data.series);
+      const rb = seriesRank(b.data.series);
+      if (ra !== rb) return ra - rb;
+      const oa = a.data.order;
+      const ob = b.data.order;
+      if (oa != null && ob != null && oa !== ob) return oa - ob;
+      if (oa != null && ob == null) return -1;
+      if (oa == null && ob != null) return 1;
       return b.data.pubDate.valueOf() - a.data.pubDate.valueOf();
     })
     .map((p) => ({ ...p, readingMinutes: 0 }));

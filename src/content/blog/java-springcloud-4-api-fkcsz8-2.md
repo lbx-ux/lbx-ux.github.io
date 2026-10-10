@@ -3,8 +3,7 @@ title: 4.网关路由
 description: 顾明思议，网关就是网络的关口。数据在网络间传输，从一个网络传输到另一网络时就需要经过网关来做数据的路由和转发以及数据安全的校验。
 pubDate: 2026-09-01
 series: SpringCloud
-order: 4
-sort: 4
+order: 2
 source: Java后端/SpringCloud/4.API网关.md
 ---
 
