@@ -259,15 +259,10 @@
       }
       postList.innerHTML = posts
         .map(
-          (p, i) => `
+          (p) => `
         <div class="item" role="listitem" data-slug="${esc(p.slug)}">
-          <div class="sort-handle" title="上移 / 下移">
-            <button class="sort-btn" data-action="move-up" data-slug="${esc(p.slug)}" data-idx="${i}" aria-label="上移" ${i === 0 ? 'disabled' : ''}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
-            </button>
-            <button class="sort-btn" data-action="move-down" data-slug="${esc(p.slug)}" data-idx="${i}" aria-label="下移" ${i === posts.length - 1 ? 'disabled' : ''}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-            </button>
+          <div class="drag-handle" draggable="true" title="拖动调整顺序" aria-label="拖动调整顺序">
+            <svg width="12" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="5" r="1.7"/><circle cx="15" cy="5" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="19" r="1.7"/><circle cx="15" cy="19" r="1.7"/></svg>
           </div>
           <div class="item-main">
             <div class="item-title">
@@ -325,27 +320,73 @@
       return;
     }
 
-    if (action === 'move-up' || action === 'move-down') {
-      const idx = Number(btn.dataset.idx);
-      const { posts } = await api('/api/posts');
-      const slugs = posts.map((p) => p.slug);
-      const target = action === 'move-up' ? idx - 1 : idx + 1;
-      if (target < 0 || target >= slugs.length) return;
-      [slugs[idx], slugs[target]] = [slugs[target], slugs[idx]];
-      try {
-        await api('/api/posts/reorder', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slugs }),
-        });
-        loadPosts();
-      } catch (err) {
-        toast(err.message, 'err');
-      }
+    if (action === 'edit') openEdit(slug);
+  });
+
+  /* ── 拖拽排序（HTML5 原生 DnD，从手柄拖动整行） ── */
+  let dragSlug = null; // 正在拖动的文章 slug
+
+  postList.addEventListener('dragstart', (e) => {
+    const handle = e.target.closest('.drag-handle');
+    if (!handle) {
+      e.preventDefault(); // 只允许从手柄发起拖动
       return;
     }
+    const item = handle.closest('.item');
+    dragSlug = item.dataset.slug;
+    item.classList.add('is-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragSlug); // Firefox 需要非空 data 才启动拖拽
+  });
 
-    if (action === 'edit') openEdit(slug);
+  postList.addEventListener('dragend', () => {
+    dragSlug = null;
+    postList.querySelectorAll('.item').forEach((el) => el.classList.remove('is-dragging', 'drop-above', 'drop-below'));
+  });
+
+  postList.addEventListener('dragover', (e) => {
+    if (!dragSlug) return;
+    e.preventDefault(); // 允许放置
+    e.dataTransfer.dropEffect = 'move';
+    const overItem = e.target.closest('.item');
+    postList.querySelectorAll('.item').forEach((el) => el.classList.remove('drop-above', 'drop-below'));
+    if (!overItem || overItem.dataset.slug === dragSlug) return;
+    // 指针在上半部 → 将插到它前面；下半部 → 插到它后面
+    const rect = overItem.getBoundingClientRect();
+    const above = e.clientY < rect.top + rect.height / 2;
+    overItem.classList.add(above ? 'drop-above' : 'drop-below');
+  });
+
+  postList.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    if (!dragSlug) return;
+    const overItem = e.target.closest('.item');
+    if (!overItem || overItem.dataset.slug === dragSlug) return;
+    const rect = overItem.getBoundingClientRect();
+    const above = e.clientY < rect.top + rect.height / 2;
+    const targetSlug = overItem.dataset.slug;
+
+    // 先重排 DOM（即时反馈），成功后不整表刷新，避免打断继续拖动
+    const dragItem = postList.querySelector(`[data-slug="${CSS.escape(dragSlug)}"]`);
+    dragItem?.classList.remove('is-dragging');
+    if (dragItem) {
+      if (above) overItem.parentNode.insertBefore(dragItem, overItem);
+      else overItem.parentNode.insertBefore(dragItem, overItem.nextSibling);
+    }
+
+    // 按新 DOM 顺序提交
+    const slugs = [...postList.querySelectorAll('.item')].map((el) => el.dataset.slug);
+    try {
+      await api('/api/posts/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slugs }),
+      });
+      toast('顺序已保存', 'ok');
+    } catch (err) {
+      toast(err.message, 'err');
+      loadPosts(); // 失败回滚到服务器顺序
+    }
   });
 
   /* ── 编辑已发布文章（元信息 + 正文） ── */
