@@ -172,6 +172,14 @@
   const previewPre = $('#preview-content');
   const editArea = $('#edit-content');
 
+  // 关闭：× 按钮（data-close）+ 点弹窗外遮罩；Esc 由 <dialog> 原生处理
+  for (const btn of document.querySelectorAll('[data-close]')) {
+    btn.addEventListener('click', () => previewDialog.close());
+  }
+  previewDialog.addEventListener('click', (e) => {
+    if (e.target === previewDialog) previewDialog.close();
+  });
+
   async function openPreview(idx) {
     const rec = visibleMds()[idx];
     if (!rec) return;
