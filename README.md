@@ -13,12 +13,13 @@
 - **文章页**：标题 / 日期 / 阅读时长 / 目录（TOC 滚动高亮）/ Shiki 双主题代码高亮 + 一键复制 / 上一篇·下一篇 / 相关文章推荐
 - **沉浸式阅读**：一键进入无干扰阅读模式，文章 GSAP Flip 动画移至屏幕中央，支持 Esc / 按钮 / 点击遮罩三种退出方式，退出后恢复原滚动位置
 - **全局搜索**：任意页面按 `Ctrl+K`（Mac `⌘K`）呼出命令面板，构建时生成 JSON 索引，客户端加权模糊匹配，零后端
-- **关于页 / 404**：统一的玻璃视觉
+- **关于页**：实时统计条（公开笔记数 / 专栏数）+ 内容版图（专栏按主题聚类，点专栏名直达目录页）+ 联系方式；404 页同套玻璃视觉
+  - 邮箱在源码里拆段存放、页面输出为 HTML 实体、`mailto:` 由运行时拼装——构建产物里没有可直接抓取的明文地址
 - **项目页**（`/projects`）：从零独立实现的 Java 后端项目，展示技术栈、量化压测结果与核心难点做法，并自动关联站内对应专栏的学习笔记（数据集中在 `src/data/projects.ts`，加项目只改数据）
 - **返回顶部 / 阅读进度条 / 导航栏智能隐藏**
 
 ### 内容与 SEO
-- **RSS 全文输出**（`/rss.xml`）、**sitemap**、`robots.txt`
+- **RSS 全文输出**（`/rss.xml`）、**sitemap**、`robots.txt` —— RSS 只在 `<head>` 里留自动发现链接，页面上不放订阅按钮
 - **Open Graph / Twitter 卡片**、JSON-LD 结构化数据（BlogPosting / Person / WebSite）
 - **草稿支持**：`draft: true` 的文章构建时排除，不会公开
 - **暗色 / 浅色主题**：localStorage 记忆 + 系统偏好跟随 + 防首帧闪烁 + 视图过渡后主题保持
@@ -46,20 +47,23 @@ npm run dev       # http://localhost:4321
 
 ## ✍️ 写作
 
-在 `src/content/blog/` 新建 `.md` 文件：
+日常发布走下面的「上传发布后台」（拖笔记进来即可，专栏与排序自动处理）。
+手写也完全支持——在 `src/content/blog/` 放一个 `.md`，frontmatter 字段如下：
 
 ```yaml
 ---
 title: 文章标题
 description: 一句话摘要（用于列表卡片与 SEO）
 pubDate: 2026-08-31
-series: 专栏名        # 可选，发布后台自动推导
-order: 1             # 可选，专栏内位置（后台拖拽排序自动维护）
-# draft: true        # 可选，草稿构建时排除
+series: 专栏名        # 可选；决定归属哪个专栏，专栏顺序见 series-order.json
+order: 1             # 可选；专栏内位置，后台拖拽会自动维护
+# draft: true        # 可选；草稿在构建时排除，不会公开
 ---
 
 正文 Markdown……
 ```
+
+> 值里带 `@`、反引号、`:` 等 YAML 特殊字符时记得加引号——后台自动写入时会做转义，手写要注意。
 
 ## 🗂 上传发布后台（本地工具）
 
@@ -67,9 +71,10 @@ order: 1             # 可选，专栏内位置（后台拖拽排序自动维护
 
 - 拖入 `.md` 笔记与图片（或点击「选择文件 / 选择文件夹」；选文件夹会保留目录结构）
 - 专栏与序号**按上传的目录路径自动推导**（如 `Java后端/数据库/Redis/…` → Redis 专栏），可在发布弹窗手改
-- 自动完成：Obsidian 语法清洗（`![[嵌入]]`、callout、双链等）、图片配对落盘与压缩（限宽 + PNG→WebP 择优，可用 `scripts/admin/config.json` 的 `imageMaxWidth` / `imageQuality` 调整）、frontmatter 补全、slug 生成
+- 自动完成：Obsidian 语法清洗（`![[嵌入]]`、callout、双链等）、图片配对落盘与压缩（限宽 + PNG→WebP 择优，可用 `scripts/admin/config.json` 的 `imageMaxWidth` / `imageQuality` 调整）、frontmatter 补全与 **YAML 转义**、slug 生成
 - 正文里引用但未随笔记上传的图片会留「缺图」注释占位，手动把图片放进 `public/covers/<slug>/` 后改回链接即可
-- 已发布文章管理：按专栏分组展示；**拖拽排序**（拖专栏标题栏调专栏顺序、拖文章调专栏内顺序，主页与专栏页同步）；**在线编辑正文与元信息** / 下架转草稿 / 删除
+- 已发布文章**按专栏分组**展示（默认折叠，只看组名与篇数，可逐个展开或一键全开）；**两级拖拽排序**——拖专栏标题栏调专栏顺序、拖文章调专栏内顺序，主页与专栏页同步
+- **在线编辑正文与元信息**；下架转草稿；删除文章会连带清掉 `public/covers/<slug>/` 的图片目录
 - 专栏顺序存于 `src/content/series-order.json`（后台拖动自动写入）
 
 启动方式：双击 `scripts/admin/启动发布后台.bat`，或：
@@ -97,8 +102,8 @@ node scripts/admin/server.mjs   # http://127.0.0.1:8799
    ```
 
 4. **开启 Pages**：仓库 **Settings → Pages → Build and deployment → Source** 选 **GitHub Actions**
-5. 推送到 `main` 后，[.github/workflows/deploy.yml](.github/workflows/deploy.yml) 自动构建部署；也可以在 Actions 页手动触发（`workflow_dispatch`）
-   > ⏸ 部署目前**已冻结**：workflow 只保留手动触发。恢复自动部署：把 deploy.yml `on:` 里的 push 触发加回来即可。
+5. **部署目前处于冻结状态** ⏸：[.github/workflows/deploy.yml](.github/workflows/deploy.yml) 只保留 `workflow_dispatch` 手动触发，推送到 `main` **不会**自动上线，线上内容可能落后于仓库。要发布：Actions 页选该 workflow → Run workflow。
+   > 恢复自动部署：把 deploy.yml `on:` 里的 `push: branches: [main]` 加回来即可（文件顶部注释里留了原文）。
 6. 部署完成后访问 `https://<用户名>.github.io/<仓库名>/`
 
 > 🔒 注意：`scripts/admin/` 完全独立于构建产物，不会被部署；`config.json` 已在 `.gitignore` 中排除。
@@ -120,12 +125,12 @@ node scripts/admin/server.mjs   # http://127.0.0.1:8799
 ├─ astro.config.mjs          # 站点配置（site / base / sitemap / shiki）
 ├─ scripts/
 │  ├─ generate-og.mjs        # OG 分享图生成（sharp）
-│  ├─ import-notes.mjs       # CLI 笔记导入
-│  └─ admin/                 # 本地发布后台（http 服务 + 前端）
+│  └─ admin/                 # 本地发布后台（零依赖 http 服务 + 前端）
 ├─ src/
-│  ├─ consts.ts              # 站点单一配置源（站名 / 作者 / 社交链接）
+│  ├─ consts.ts              # 站点单一配置源（站名 / 作者 / 社交链接 / 邮箱）
 │  ├─ content.config.ts      # 文章集合 schema
 │  ├─ content/blog/          # 文章（Markdown）
+│  ├─ content/series-order.json  # 专栏顺序（后台拖拽写入）
 │  ├─ data/projects.ts       # 项目展示数据（技术栈 / 难点 / 关联专栏）
 │  ├─ layouts/               # BaseLayout / PostLayout
 │  ├─ components/            # Header / PostCard / Toc / Footer ...

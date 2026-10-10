@@ -9,7 +9,6 @@
     "preview": "astro preview",
     "check": "astro check",
     "og": "node scripts/generate-og.mjs",
-    "note": "node scripts/import-notes.mjs",
     "astro": "astro"
   },
   "dependencies": {

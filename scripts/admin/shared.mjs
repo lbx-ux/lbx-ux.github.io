@@ -1,6 +1,7 @@
 /**
- * 笔记导入共享逻辑：CLI（import-notes.mjs）与发布后台（admin/server.mjs）共用。
- * 职责：浏览 Obsidian 库、语法清洗、frontmatter 补全、写入博客目录。
+ * 发布后台的笔记处理逻辑（被 admin/server.mjs 调用）。
+ * 职责：清洗 Obsidian 语法、配对并压缩上传图片、补全 frontmatter、写入博客目录，
+ * 以及已发布文章的增删改查与层级排序（专栏顺序写 series-order.json，组内顺序写 order）。
  */
 import fs from 'node:fs';
 import path from 'node:path';
