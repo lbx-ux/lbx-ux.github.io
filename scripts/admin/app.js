@@ -368,10 +368,10 @@
     const { action, slug } = btn.dataset;
 
     if (action === 'delete') {
-      if (!confirm(`确定删除《${slug}》？此操作不可撤销（文件直接删除）。`)) return;
+      if (!confirm(`确定删除《${slug}》？正文与这篇的图片目录会一并删除，不可撤销。`)) return;
       try {
-        await api(`/api/posts/${encodeURIComponent(slug)}`, { method: 'DELETE' });
-        toast('已删除', 'ok');
+        const r = await api(`/api/posts/${encodeURIComponent(slug)}`, { method: 'DELETE' });
+        toast(r.imagesRemoved ? `已删除（含 ${r.imagesRemoved} 张图片）` : '已删除', 'ok');
         loadPosts();
       } catch (err) {
         toast(err.message, 'err');

@@ -549,11 +549,29 @@ export function reorderGroups(groups, cfg = loadConfig()) {
   return { ok: true, changed };
 }
 
+/** slug 只允许单层文件名：挡掉 ../ 与路径分隔符（删除会递归，必须先校验） */
+function safeSlug(slug) {
+  if (typeof slug !== 'string' || !slug) return false;
+  if (slug === '.' || slug === '..' || slug.includes('..')) return false;
+  return !/[/\\]/.test(slug);
+}
+
 export function deletePost(slug, cfg = loadConfig()) {
+  if (!safeSlug(slug)) return { error: `非法 slug：${slug}` };
   const file = path.join(ROOT, cfg.blogDir, `${slug}.md`);
   if (!fs.existsSync(file)) return { error: `文章不存在：${slug}` };
   fs.unlinkSync(file);
-  return { slug, ok: true };
+
+  // 一并清掉这篇的图片目录，避免留下孤儿文件
+  const coversRoot = path.join(ROOT, 'public', 'covers');
+  const imgDir = path.join(coversRoot, slug);
+  const inside = path.relative(coversRoot, imgDir);
+  let imagesRemoved = 0;
+  if (inside && !inside.includes('..') && !path.isAbsolute(inside) && fs.existsSync(imgDir)) {
+    imagesRemoved = fs.readdirSync(imgDir).length;
+    fs.rmSync(imgDir, { recursive: true, force: true });
+  }
+  return { slug, ok: true, imagesRemoved };
 }
 
 export { ROOT };
